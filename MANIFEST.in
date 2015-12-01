@@ -1,0 +1,7 @@
+include LICENSE.txt
+include package.json
+include pylama.ini
+include README.md
+include requirements.dev.txt
+include requirements.txt
+include run.py
