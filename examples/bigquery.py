@@ -1,14 +1,15 @@
+import os
 import argparse
 
 from apiclient.discovery import build
 from apiclient.errors import HttpError
-from oauth2client.client import GoogleCredentials
+from oauth2client.client import GoogleCredentials, SignedJwtAssertionCredentials
 
 
 def main(project_id):
     # [START build_service]
     # Grab the application's default credentials from the environment.
-    credentials = GoogleCredentials.get_application_default()
+    credentials = SignedJwtAssertionCredentials(os.environ['GOOGLE_CLIENT_EMAIL'], os.environ['GOOGLE_PRIVATE_KEY'], ['https://www.googleapis.com/auth/bigquery'])
     # Construct the service object for interacting with the BigQuery API.
     bigquery_service = build('bigquery', 'v2', credentials=credentials)
     # [END build_service]
