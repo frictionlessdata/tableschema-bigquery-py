@@ -1,0 +1,36 @@
+{
+    "fields": [
+        {
+            "type": "string",
+            "name": "id",
+            "format": "default",
+            "constraints": {
+                "required": true
+            }
+        },
+        {
+            "type": "string",
+            "name": "name",
+            "format": "default",
+            "constraints": {
+                "required": true
+            }
+        },
+        {
+            "type": "string",
+            "name": "description",
+            "format": "default",
+            "constraints": {
+                "required": true
+            }
+        },
+        {
+            "type": "number",
+            "name": "amount",
+            "format": "default",
+            "constraints": {
+                "required": true
+            }
+        }
+    ]
+}

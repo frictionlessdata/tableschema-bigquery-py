@@ -18,4 +18,4 @@ table = ServiceTable(
         project_id='jsontableschema-bigquery-py',
         dataset_id='test',
         table_id='test')
-table.download('tmp/test.csv')
+table.download('tmp')
