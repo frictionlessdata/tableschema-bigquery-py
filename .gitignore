@@ -63,3 +63,6 @@ venv3/
 
 # Tmux
 .tmuxp.yml
+
+# Project
+tmp/
