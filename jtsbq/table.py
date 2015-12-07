@@ -9,7 +9,7 @@ import csv
 import json
 import time
 from apiclient.discovery import build
-from apiclient.http import MediaFileUpload
+from apiclient.http import MediaIoBaseUpload
 from tabulator import topen, processors
 from jsontableschema.model import SchemaModel
 from oauth2client.client import SignedJwtAssertionCredentials
@@ -82,7 +82,8 @@ class Table(object):
         # Write files on disk
         with io.open(schema_path, mode='w', encoding='utf-8') as file:
             json.dump(schema, file, indent=4)
-        with io.open(data_path, mode='w', encoding='utf-8') as file:
+        with io.open(data_path, mode='w', encoding='utf-8',
+                     newline='') as file:
             writer = csv.writer(file)
             writer.writerow(headers)
             # TODO: remove additional loop
@@ -98,11 +99,19 @@ class Table(object):
             schema = json.load(file)
 
         # Read data
+        bytes = io.BufferedRandom(io.BytesIO())
+        class Stream: #noqa
+            def write(self, string):
+                bytes.write(string.encode('utf-8'))
+        stream = Stream()
         with topen(data_path, **options) as table:
-            # TODO: add header row config
+            # TODO: add header row config?
             table.add_processor(processors.Headers())
             table.add_processor(processors.Schema(schema))
-            data = table.read()  # noqa
+            writer = csv.writer(stream)
+            for row in table.readrow():
+                writer.writerow(row)
+        bytes.seek(0)
 
         # Convert schema
         model = SchemaModel(schema)
@@ -130,15 +139,13 @@ class Table(object):
                         'tableId': self.__table_id
                     },
                     'sourceFormat': 'CSV',
-                    "skipLeadingRows": 1,
                 }
             }
         }
 
-        # Prepare media body
-        # http://developers.google.com/api-client-library/python/guide/media_upload
-        media_body = MediaFileUpload(
-                data_path, mimetype='application/octet-stream')
+        # Prepare job media body
+        mimetype = 'application/octet-stream'
+        media_body = MediaIoBaseUpload(bytes, mimetype=mimetype)
 
         # Post to the jobs resource
         job = self.__bigquery.jobs().insert(
@@ -154,8 +161,8 @@ class Table(object):
             result = status.execute(num_retries=2)
             if result['status']['state'] == 'DONE':
                 if result['status'].get('errors'):
-                    message = '\n'.join(
-                            e['message'] for e in result['status']['errors'])
+                    errors = result['status']['errors']
+                    message = '\n'.join(error['message'] for error in errors)
                     raise RuntimeError(message)
                 break
             time.sleep(1)
