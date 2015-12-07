@@ -1,5 +1,8 @@
 # jsontableschema-bigquery-py
 
+[![Travis](https://img.shields.io/travis/okfn/jsontableschema-bigquery-py.svg)](https://travis-ci.org/okfn/jsontableschema-bigquery-py)
+[![Coveralls](http://img.shields.io/coveralls/okfn/jsontableschema-bigquery-py.svg?branch=master)](https://coveralls.io/r/okfn/jsontableschema-bigquery-py?branch=master)
+
 Generate and load BigQuery tables based on JSON Table Schema descriptors.
 
 ## Usage
