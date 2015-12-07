@@ -6,13 +6,13 @@ from __future__ import unicode_literals
 
 import unittest
 from importlib import import_module
-module = import_module('jtsbq.service')
+module = import_module('jtsbq.table')
 
 
 # TODO: implement
-class ServiceTableTest(unittest.TestCase):
+class TableTest(unittest.TestCase):
 
     # Tests
 
     def test(self):
-        self.assertTrue(module.ServiceTable)
+        self.assertTrue(module.Table)

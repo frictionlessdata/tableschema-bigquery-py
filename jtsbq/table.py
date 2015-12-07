@@ -4,7 +4,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import os
 import csv
 import json
 from jsontableschema.model import SchemaModel
@@ -12,7 +11,7 @@ from apiclient.discovery import build
 from oauth2client.client import SignedJwtAssertionCredentials
 
 
-class ServiceTable(object):
+class Table(object):
     """BigQuery table representation.
     """
 
@@ -35,8 +34,18 @@ class ServiceTable(object):
         self.__dataset_id = dataset_id
         self.__table_id = table_id
 
-    def download(self, path):
-        """Download table to directory by path.
+    def download(self, schema_path, data_path):
+        """Download table schema and data
+
+        Directory of the files has to be existent.
+
+        Parameters
+        ----------
+        schema_path (str):
+            Path to schema (json) file to be saved.
+        data_path (str):
+            Path to data (csv) file to be saved.
+
         """
 
         # Prepare headers and rows
@@ -48,16 +57,10 @@ class ServiceTable(object):
             row = tuple(model.convert_row(*row))
             rows.append(row)
 
-        # Prepare paths to write
-        if not os.path.exists(path):
-            os.makedirs(path)
-        jsonfile = os.path.join(path, 'schema.json')
-        csvfile = os.path.join(path, 'data.csv')
-
         # Write files on disk
-        with open(jsonfile, 'w') as file:
+        with open(schema_path, 'w') as file:
             json.dump(schema, file, indent=4)
-        with open(csvfile, 'w') as file:
+        with open(data_path, 'w') as file:
             writer = csv.writer(file)
             writer.writerow(headers)
             # TODO: remove additional loop
@@ -115,6 +118,7 @@ class ServiceTable(object):
             except KeyError:
                 message = 'Type %s is not supported' % field['type']
                 raise TypeError(message)
+            # TODO: fix required
             fields.append({
                 'name': field['name'],
                 'type': ftype,

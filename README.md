@@ -16,7 +16,7 @@ Download Big Query table as data+schema:
 from jtsbq import Table
 
 table = Table('client_email', 'private_key', 'project_id', 'dataset_id', 'table_id')
-table.download('path/data.csv', 'path/schema.json')
+table.download('path/schema.json', 'path/data.csv', )
 ```
 
 Upload data+schema to Big Query:
@@ -25,7 +25,7 @@ Upload data+schema to Big Query:
 from jtsbq import Table
 
 table = Table('client_email', 'private_key', 'project_id', 'dataset_id', 'table_id')
-table.upload('path/data.csv', 'path/schema.json')
+table.upload('path/schema.json', 'path/data.csv')
 ```
 
 ### Authentification
