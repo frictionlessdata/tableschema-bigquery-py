@@ -92,6 +92,16 @@ class Table(object):
 
     def upload(self, schema_path, data_path, **options):
         """Upload schema+data to BigQuery.
+
+        Parameters
+        ----------
+        schema_path (str):
+            Path to schema (json) file to be uploaded.
+        data_path (str):
+            Path to data (csv) file to be uploaded.
+        options (dict):
+            Tabulator options.
+
         """
 
         # Read schema
