@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 
 import io
 import csv
+import six
 import json
 import time
 from apiclient.discovery import build
@@ -80,10 +81,21 @@ class Table(object):
             rows.append(row)
 
         # Write files on disk
-        with io.open(schema_path, mode='w', encoding='utf-8') as file:
+        mode = 'w'
+        newline = ''
+        encoding = 'utf-8'
+        if six.PY2:
+            mode = 'wb'
+            newline = None
+            encoding = None
+        with io.open(schema_path,
+                     mode=mode,
+                     encoding=encoding) as file:
             json.dump(schema, file, indent=4)
-        with io.open(data_path, mode='w', encoding='utf-8',
-                     newline='') as file:
+        with io.open(data_path,
+                     mode=mode,
+                     newline=newline,
+                     encoding=encoding) as file:
             writer = csv.writer(file)
             writer.writerow(headers)
             # TODO: remove additional loop

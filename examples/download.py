@@ -18,18 +18,7 @@ table = Table(
         private_key=private_key,
         project_id='jsontableschema-bigquery-py',
         dataset_id='examples',
-        table_id='test')
+        table_id='download')
 table.download(
     'tmp/schema.json',
     'tmp/data.csv')
-
-# Upload
-table = Table(
-        client_email= client_email,
-        private_key=private_key,
-        project_id='jsontableschema-bigquery-py',
-        dataset_id='examples',
-        table_id='test2')
-table.upload(
-    'examples/data/spending/schema.json',
-    'examples/data/spending/data.csv')
