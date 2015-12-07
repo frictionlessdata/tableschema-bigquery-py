@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 import os
 import csv
 import json
-import uuid
 from jsontableschema.model import SchemaModel
 from apiclient.discovery import build
 from oauth2client.client import SignedJwtAssertionCredentials
