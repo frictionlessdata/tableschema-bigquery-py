@@ -177,6 +177,9 @@ class Table(object):
                 break
             time.sleep(1)
 
+        # Reset rows cache
+        self.__rows_cache = None
+
     # Private
 
     @property
@@ -185,7 +188,7 @@ class Table(object):
         """
 
         # Return from cache
-        if hasattr(self, '__rows_cache'):
+        if getattr(self, '__rows_cache', None) is not None:
             return self.__rows_cache
 
         # Prepare rows
@@ -209,7 +212,7 @@ class Table(object):
         """
 
         # Return from cache
-        if hasattr(self, '__schema_cache'):
+        if getattr(self, '__schema_cache', None) is not None:
             return self.__schema_cache
 
         # Prepare schema
@@ -228,7 +231,7 @@ class Table(object):
         """
 
         # Return from cache
-        if hasattr(self, '__bigquery_cache'):
+        if getattr(self, '__bigquery_cache', None) is not None:
             return self.__bigquery_cache
 
         # Prepare service
