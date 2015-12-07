@@ -12,7 +12,7 @@ This section is intended to be used by end-users of the library.
 
 Download Big Query table as data+schema:
 
-```
+```python
 from jtsbq import Table
 
 table = Table('client_email', 'private_key', 'project_id', 'dataset_id', 'table_id')
@@ -21,7 +21,7 @@ table.download('path/data.csv', 'path/schema.json')
 
 Upload data+schema to Big Query:
 
-```
+```python
 from jtsbq import Table
 
 table = Table('client_email', 'private_key', 'project_id', 'dataset_id', 'table_id')
@@ -39,7 +39,7 @@ To start using Google BigQuery service:
 
 Then you can use environment variables to get `client_email` and `private_key`:
 
-```
+```python
 import os
 
 client_email = os.environ['GOOGLE_CLIENT_EMAIL']
