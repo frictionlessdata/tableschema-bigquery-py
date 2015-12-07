@@ -4,10 +4,14 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import io
 import csv
 import json
-from jsontableschema.model import SchemaModel
+import time
 from apiclient.discovery import build
+from apiclient.http import MediaFileUpload
+from tabulator import topen, processors
+from jsontableschema.model import SchemaModel
 from oauth2client.client import SignedJwtAssertionCredentials
 
 
@@ -18,12 +22,16 @@ class Table(object):
     # Public
 
     SCOPE = ['https://www.googleapis.com/auth/bigquery']
-    TYPES = {
+    DOWNLOAD_TYPES = {
         'STRING': 'string',
         'INTEGER': 'integer',
         'FLOAT': 'number',
         'BOOLEAN': 'boolean',
         'TIMESTAMP': 'datetime',
+    }
+    UPLOAD_TYPES = {
+        'string': 'STRING',
+        'number': 'FLOAT',
     }
 
     def __init__(self, client_email, private_key,
@@ -35,7 +43,7 @@ class Table(object):
         self.__table_id = table_id
 
     def download(self, schema_path, data_path):
-        """Download table schema and data
+        """Download table's schema+data
 
         Directory of the files has to be existent.
 
@@ -48,8 +56,22 @@ class Table(object):
 
         """
 
+        # Convert schema
+        fields = []
+        for field in self.__schema['fields']:
+            try:
+                ftype = self.DOWNLOAD_TYPES[field['type']]
+            except KeyError:
+                message = 'Type %s is not supported' % field['type']
+                raise TypeError(message)
+            # TODO: fix required
+            fields.append({
+                'name': field['name'],
+                'type': ftype,
+            })
+        schema = {'fields': fields}
+
         # Prepare headers and rows
-        schema = self.__schema
         model = SchemaModel(schema)
         headers = model.headers
         rows = []
@@ -58,14 +80,85 @@ class Table(object):
             rows.append(row)
 
         # Write files on disk
-        with open(schema_path, 'w') as file:
+        with io.open(schema_path, mode='w', encoding='utf-8') as file:
             json.dump(schema, file, indent=4)
-        with open(data_path, 'w') as file:
+        with io.open(data_path, mode='w', encoding='utf-8') as file:
             writer = csv.writer(file)
             writer.writerow(headers)
             # TODO: remove additional loop
             for row in rows:
                 writer.writerow(row)
+
+    def upload(self, schema_path, data_path, **options):
+        """Upload schema+data to BigQuery.
+        """
+
+        # Read schema
+        with io.open(schema_path, encoding='utf-8') as file:
+            schema = json.load(file)
+
+        # Read data
+        with topen(data_path, **options) as table:
+            # TODO: add header row config
+            table.add_processor(processors.Headers())
+            table.add_processor(processors.Schema(schema))
+            data = table.read()  # noqa
+
+        # Convert schema
+        model = SchemaModel(schema)
+        fields = []
+        for field in model.fields:
+            try:
+                ftype = self.UPLOAD_TYPES[field['type']]
+            except KeyError:
+                message = 'Type %s is not supported' % field['type']
+                raise TypeError(message)
+            fields.append({
+                'name': field['name'],
+                'type': ftype,
+            })
+        schema = {'fields': fields}
+
+        # Prepare job body
+        body = {
+            'configuration': {
+                'load': {
+                    'schema':  schema,
+                    'destinationTable': {
+                        'projectId': self.__project_id,
+                        'datasetId': self.__dataset_id,
+                        'tableId': self.__table_id
+                    },
+                    'sourceFormat': 'CSV',
+                    "skipLeadingRows": 1,
+                }
+            }
+        }
+
+        # Prepare media body
+        # http://developers.google.com/api-client-library/python/guide/media_upload
+        media_body = MediaFileUpload(
+                data_path, mimetype='application/octet-stream')
+
+        # Post to the jobs resource
+        job = self.__bigquery.jobs().insert(
+            projectId=self.__project_id,
+            body=body,
+            media_body=media_body).execute()
+        status = self.__bigquery.jobs().get(
+            projectId=job['jobReference']['projectId'],
+            jobId=job['jobReference']['jobId'])
+
+        # Poll the job until it finishes.
+        while True:
+            result = status.execute(num_retries=2)
+            if result['status']['state'] == 'DONE':
+                if result['status'].get('errors'):
+                    message = '\n'.join(
+                            e['message'] for e in result['status']['errors'])
+                    raise RuntimeError(message)
+                break
+            time.sleep(1)
 
     # Private
 
@@ -108,22 +201,7 @@ class Table(object):
                 projectId=self.__project_id,
                 datasetId=self.__dataset_id,
                 tableId=self.__table_id).execute()
-        schema = table['schema']
-
-        # Convert schema
-        fields = []
-        for field in schema['fields']:
-            try:
-                ftype = self.TYPES[field['type']]
-            except KeyError:
-                message = 'Type %s is not supported' % field['type']
-                raise TypeError(message)
-            # TODO: fix required
-            fields.append({
-                'name': field['name'],
-                'type': ftype,
-            })
-        self.___schema = {'fields': fields}
+        self.___schema = table['schema']
 
         return self.___schema
 

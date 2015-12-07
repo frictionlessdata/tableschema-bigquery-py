@@ -12,10 +12,24 @@ from jtsbq import Table
 client_email = os.environ['GOOGLE_CLIENT_EMAIL']
 private_key = os.environ['GOOGLE_PRIVATE_KEY']
 
+# Download
 table = Table(
         client_email= client_email,
         private_key=private_key,
         project_id='jsontableschema-bigquery-py',
-        dataset_id='test',
+        dataset_id='examples',
         table_id='test')
-table.download('tmp/schema.json', 'tmp/data.csv')
+table.download(
+    'tmp/schema.json',
+    'tmp/data.csv')
+
+# Upload
+table = Table(
+        client_email= client_email,
+        private_key=private_key,
+        project_id='jsontableschema-bigquery-py',
+        dataset_id='examples',
+        table_id='test2')
+table.upload(
+    'examples/data/spending/schema.json',
+    'examples/data/spending/data.csv')
