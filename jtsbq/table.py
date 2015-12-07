@@ -175,8 +175,8 @@ class Table(object):
         """
 
         # Return from cache
-        if hasattr(self, '___rows'):
-            return self.___rows
+        if hasattr(self, '__rows_cache'):
+            return self.__rows_cache
 
         # Prepare rows
         template = 'SELECT * FROM [{project_id}:{dataset_id}.{table_id}];'
@@ -187,11 +187,11 @@ class Table(object):
         response = self.__bigquery.jobs().query(
             projectId=self.__project_id,
             body={'query': query}).execute()
-        self.___rows = []
+        self.__rows_cache = []
         for row in response['rows']:
-            self.___rows.append(tuple(field['v'] for field in row['f']))
+            self.__rows_cache.append(tuple(field['v'] for field in row['f']))
 
-        return self.___rows
+        return self.__rows_cache
 
     @property
     def __schema(self):
@@ -199,8 +199,8 @@ class Table(object):
         """
 
         # Return from cache
-        if hasattr(self, '___schema'):
-            return self.___schema
+        if hasattr(self, '__schema_cache'):
+            return self.__schema_cache
 
         # Prepare schema
         tables = self.__bigquery.tables()
@@ -208,9 +208,9 @@ class Table(object):
                 projectId=self.__project_id,
                 datasetId=self.__dataset_id,
                 tableId=self.__table_id).execute()
-        self.___schema = table['schema']
+        self.__schema_cache = table['schema']
 
-        return self.___schema
+        return self.__schema_cache
 
     @property
     def __bigquery(self):
@@ -218,12 +218,13 @@ class Table(object):
         """
 
         # Return from cache
-        if hasattr(self, '___bigquery'):
-            return self.___bigquery
+        if hasattr(self, '__bigquery_cache'):
+            return self.__bigquery_cache
 
         # Prepare service
         credentials = SignedJwtAssertionCredentials(
                 self.__client_email, self.__private_key, self.SCOPE)
-        self.___bigquery = build('bigquery', 'v2', credentials=credentials)
+        self.__bigquery_cache = build(
+                'bigquery', 'v2', credentials=credentials)
 
-        return self.___bigquery
+        return self.__bigquery_cache
