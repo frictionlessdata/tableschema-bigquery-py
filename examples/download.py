@@ -16,8 +16,8 @@ private_key = os.environ['GOOGLE_PRIVATE_KEY']
 table = Table(
         client_email= client_email,
         private_key=private_key,
-        project_id='jsontableschema-bigquery-py',
-        dataset_id='examples',
+        project_id='frictionless-data-roll',
+        dataset_id='jsontableschema',
         table_id='download')
 table.download(
     'tmp/schema.json',
