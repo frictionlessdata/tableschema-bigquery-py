@@ -11,27 +11,35 @@ This section is intended to be used by end-users of the library.
 
 ### Download/upload table
 
-> See section below how to get credentials.
+> See section below how to get authentificated service.
 
-Download Big Query table as data+schema:
+Resource represents Big Query table wrapped in JSON Table Schema
+converters and validators:
+
+```python
+from jtsbq import Resource
+
+resource = Resource(<service>, 'project_id', 'dataset_id', 'table_id')
+resource.schema
+resource.get_data()
+resource.add_data(data)
+resource.save_schema(path)
+resource.save_data(path)
+
+```
+
+Table represents native Big Query table:
 
 ```python
 from jtsbq import Table
 
-table = Table('client_email', 'private_key', 'project_id', 'dataset_id', 'table_id')
-table.download('path/schema.json', 'path/data.csv', )
+table = Table(<service>, 'project_id', 'dataset_id', 'table_id')
+table.schema
+table.get_data()
+table.add_data(data)
 ```
 
-Upload data+schema to Big Query:
-
-```python
-from jtsbq import Table
-
-table = Table('client_email', 'private_key', 'project_id', 'dataset_id', 'table_id')
-table.upload('path/schema.json', 'path/data.csv')
-```
-
-### Authentification
+### Authentificated service
 
 To start using Google BigQuery service:
 - Create a project - [link](https://console.developers.google.com/home/dashboard)
@@ -44,9 +52,16 @@ Then you can use environment variables to get `client_email` and `private_key`:
 
 ```python
 import os
+from apiclient.discovery import build
+from oauth2client.client import SignedJwtAssertionCredentials
 
 client_email = os.environ['GOOGLE_CLIENT_EMAIL']
 private_key = os.environ['GOOGLE_PRIVATE_KEY']
+scope = 'https://www.googleapis.com/auth/bigquery'
+
+credentials = SignedJwtAssertionCredentials(client_email, private_key, scope)
+service = build('bigquery', 'v2', credentials=credentials)
+
 ```
 
 ## Development
