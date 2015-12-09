@@ -8,8 +8,6 @@ import io
 import csv
 import six
 import json
-import time
-from apiclient.http import MediaIoBaseUpload
 from tabulator import topen, processors
 from jsontableschema.model import SchemaModel
 
@@ -59,170 +57,88 @@ class Resource(object):
         """Return data generator.
         """
 
-        # Get data and model
-        data = self.__table.get_data()
+        # Get model and data
         model = SchemaModel(self.schema)
+        data = self.__table.get_data()
 
         # Yield converted data
         for row in data:
             row = tuple(model.convert_row(*row))
             yield row
 
-    def add_data(self):
-        pass
-
-    def save_schema(self, path):
-        pass
-
-    def save_data(self, path):
-        pass
-
-    def download(self, schema_path, data_path):
-        """Download table's schema+data
-
-        Directory of the files has to be existent.
-
-        Parameters
-        ----------
-        schema_path (str):
-            Path to schema (json) file to be saved.
-        data_path (str):
-            Path to data (csv) file to be saved.
-
+    def add_data(self, data):
+        """Add data to resource.
         """
 
-        # Convert schema
-        fields = []
-        for field in self.__schema['fields']:
-            try:
-                ftype = self.DOWNLOAD_TYPES[field['type']]
-            except KeyError:
-                message = 'Type %s is not supported' % field['type']
-                raise TypeError(message)
-            # TODO: fix required
-            fields.append({
-                'name': field['name'],
-                'type': ftype,
-            })
-        schema = {'fields': fields}
-
-        # Prepare headers and rows
-        model = SchemaModel(schema)
-        headers = model.headers
-        rows = []
-        for row in self.__rows:
+        # Get model and data
+        model = SchemaModel(self.schema)
+        cdata = []
+        for row in data:
             row = tuple(model.convert_row(*row))
-            rows.append(row)
+            cdata.append(row)
 
-        # Write files on disk
-        mode = 'w'
-        newline = ''
-        encoding = 'utf-8'
-        if six.PY2:
-            mode = 'wb'
-            newline = None
-            encoding = None
-        with io.open(schema_path,
-                     mode=mode,
-                     encoding=encoding) as file:
-            json.dump(schema, file, indent=4)
-        with io.open(data_path,
-                     mode=mode,
-                     newline=newline,
-                     encoding=encoding) as file:
+        # Add data to table
+        self.__table.add_data(cdata)
+
+    def export_schema(self, path):
+        """Export schema to file.
+        """
+
+        # Write dump on disk
+        with io.open(path,
+                     mode=self.__write_mode,
+                     encoding=self.__write_encoding) as file:
+            json.dump(self.schema, file, indent=4)
+
+    def export_data(self, path):
+        """Export data to file.
+        """
+
+        # Get model
+        model = SchemaModel(self.schema)
+
+        # Write csv on disk
+        with io.open(path,
+                     mode=self.__write_mode,
+                     newline=self.__write_newline,
+                     encoding=self.__write_encoding) as file:
             writer = csv.writer(file)
-            writer.writerow(headers)
-            # TODO: remove additional loop
-            for row in rows:
+            writer.writerow(model.headers)
+            for row in self.get_data():
                 writer.writerow(row)
 
-    def upload(self, schema, data, **options):
-        """Upload schema+data to BigQuery.
-
-        Parameters
-        ----------
-        schema (str/dict):
-            Schema or path to schema (json) file to be uploaded.
-        data (str):
-            Path to data (csv) file to be uploaded.
-        options (dict):
-            Tabulator options.
-
+    def import_data(self, path, **options):
+        """Import data from file.
         """
 
-        # Read schema
-        if not isinstance(schema, dict):
-            with io.open(schema, encoding='utf-8') as file:
-                schema = json.load(file)
-
-        # Read data
-        bytes = io.BufferedRandom(io.BytesIO())
-        class Stream: #noqa
-            def write(self, string):
-                bytes.write(string.encode('utf-8'))
-        stream = Stream()
-        with topen(data, **options) as table:
+        # Get data
+        data = []
+        with topen(path, **options) as table:
             # TODO: add header row config?
             table.add_processor(processors.Headers())
-            table.add_processor(processors.Schema(schema))
-            writer = csv.writer(stream)
+            table.add_processor(processors.Schema(self.schema))
             for row in table.readrow():
-                writer.writerow(row)
-        bytes.seek(0)
+                data.append(row)
 
-        # Convert schema
-        model = SchemaModel(schema)
-        fields = []
-        for field in model.fields:
-            try:
-                ftype = self.UPLOAD_TYPES[field['type']]
-            except KeyError:
-                message = 'Type %s is not supported' % field['type']
-                raise TypeError(message)
-            fields.append({
-                'name': field['name'],
-                'type': ftype,
-            })
-        schema = {'fields': fields}
+        # Add data to table
+        self.__table.add_data(data)
 
-        # Prepare job body
-        body = {
-            'configuration': {
-                'load': {
-                    'schema':  schema,
-                    'destinationTable': {
-                        'projectId': self.__project_id,
-                        'datasetId': self.__dataset_id,
-                        'tableId': self.__table_id
-                    },
-                    'sourceFormat': 'CSV',
-                }
-            }
-        }
+    # Private
 
-        # Prepare job media body
-        mimetype = 'application/octet-stream'
-        media_body = MediaIoBaseUpload(bytes, mimetype=mimetype)
+    @property
+    def __write_mode(self):
+        if six.PY2:
+            return 'wb'
+        return 'w'
 
-        # Post to the jobs resource
-        job = self.__bigquery.jobs().insert(
-            projectId=self.__project_id,
-            body=body,
-            media_body=media_body).execute()
-        status = self.__bigquery.jobs().get(
-            projectId=job['jobReference']['projectId'],
-            jobId=job['jobReference']['jobId'])
+    @property
+    def __write_encoding(self):
+        if six.PY2:
+            return None
+        return 'utf-8'
 
-        # Poll the job until it finishes.
-        while True:
-            result = status.execute(num_retries=2)
-            if result['status']['state'] == 'DONE':
-                if result['status'].get('errors'):
-                    errors = result['status']['errors']
-                    message = '\n'.join(error['message'] for error in errors)
-                    raise RuntimeError(message)
-                break
-            time.sleep(1)
-
-        # Reset rows cache
-        self.__rows_cache = None
+    @property
+    def __write_newline(self):
+        if six.PY2:
+            return None
+        return ''

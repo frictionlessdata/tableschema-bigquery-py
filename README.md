@@ -23,9 +23,9 @@ resource = Resource(<service>, 'project_id', 'dataset_id', 'table_id')
 resource.schema
 resource.get_data()
 resource.add_data(data)
-resource.save_schema(path)
-resource.save_data(path)
-
+resource.export_schema(path)
+resource.export_data(path)
+resource.import_data(path)
 ```
 
 Table represents native Big Query table:
