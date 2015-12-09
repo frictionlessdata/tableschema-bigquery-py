@@ -102,14 +102,14 @@ class Table(object):
             for row in rows:
                 writer.writerow(row)
 
-    def upload(self, schema_path, data_path, **options):
+    def upload(self, schema, data, **options):
         """Upload schema+data to BigQuery.
 
         Parameters
         ----------
-        schema_path (str):
-            Path to schema (json) file to be uploaded.
-        data_path (str):
+        schema (str/dict):
+            Schema or path to schema (json) file to be uploaded.
+        data (str):
             Path to data (csv) file to be uploaded.
         options (dict):
             Tabulator options.
@@ -117,8 +117,9 @@ class Table(object):
         """
 
         # Read schema
-        with io.open(schema_path, encoding='utf-8') as file:
-            schema = json.load(file)
+        if not isinstance(schema, dict):
+            with io.open(schema, encoding='utf-8') as file:
+                schema = json.load(file)
 
         # Read data
         bytes = io.BufferedRandom(io.BytesIO())
@@ -126,7 +127,7 @@ class Table(object):
             def write(self, string):
                 bytes.write(string.encode('utf-8'))
         stream = Stream()
-        with topen(data_path, **options) as table:
+        with topen(data, **options) as table:
             # TODO: add header row config?
             table.add_processor(processors.Headers())
             table.add_processor(processors.Schema(schema))
