@@ -38,6 +38,20 @@ class Resource(object):
                 table_id=table_id,
                 schema=schema)
 
+    def __repr__(self):
+
+        # Template
+        template = 'Resource <table: {table}>'
+
+        # Format
+        text = template.format(table=self.__table)
+
+        return text
+
+    @property
+    def table(self):
+        return self.__table
+
     @property
     def schema(self):
         """Return schema.

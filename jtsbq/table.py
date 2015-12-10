@@ -37,6 +37,35 @@ class Table(object):
                 raise RuntimeError(message)
             self.__create_table(schema)
 
+    def __repr__(self):
+
+        # Template
+        template = 'Table <{project_id}:{dataset_id}.{table_id}>'
+
+        # Format
+        text = template.format(
+                project_id=self.__project_id,
+                dataset_id=self.__dataset_id,
+                table_id=self.__table_id)
+
+        return text
+
+    @property
+    def service(self):
+        return self.__service
+
+    @property
+    def project_id(self):
+        return self.__project_id
+
+    @property
+    def dataset_id(self):
+        return self.__dataset_id
+
+    @property
+    def table_id(self):
+        return self.__table_id
+
     @property
     def schema(self):
         """Return schema dict.
