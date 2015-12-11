@@ -1,6 +1,6 @@
 -r requirements.txt
-tox
 pylama
+tox
 mock
 pytest
 pytest-cov
