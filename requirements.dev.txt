@@ -1,7 +1,9 @@
 -r requirements.txt
-pycrypto
+tox
 pylama
-nose
 mock
+pytest
+pytest-cov
 coverage
 coveralls
+pycrypto

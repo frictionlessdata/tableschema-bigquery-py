@@ -27,7 +27,7 @@
   "scripts": {
     "check": "python run.py review && python run.py test",
     "review": "pylama jtsbq",
-    "test": "nosetests tests -sv --with-coverage --cover-package jtsbq"
+    "test": "tox"
   }
 
 }
