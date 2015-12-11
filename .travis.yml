@@ -1,6 +1,9 @@
 language:
   python
 
+python:
+  - 3.4
+
 env:
   fast_finish: true
   matrix:
