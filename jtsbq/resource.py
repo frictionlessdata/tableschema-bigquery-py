@@ -18,7 +18,7 @@ from .table import Table
 # Module API
 
 class Resource(object):
-    """Data resource representation.
+    """Data resource gateway.
     """
 
     # Public
@@ -47,13 +47,6 @@ class Resource(object):
 
         return self.__table
 
-    @property
-    def is_existent(self):
-        """Return if resource (underlaying table) is existent.
-        """
-
-        return self.__table.is_existent
-
     def create(self, schema):
         """Create resource by JSON Table schema.
 
@@ -70,6 +63,26 @@ class Resource(object):
 
         # Create table
         self.__table.create(schema)
+
+    def delete(self):
+        """Delete resource (underlaying table).
+
+        Raises
+        ------
+        RuntimeError
+            If resource (underlaying table) is not existent.
+
+        """
+
+        # Delete table
+        self.__table.delete()
+
+    @property
+    def is_existent(self):
+        """Return if resource (underlaying table) is existent.
+        """
+
+        return self.__table.is_existent
 
     @property
     def schema(self):

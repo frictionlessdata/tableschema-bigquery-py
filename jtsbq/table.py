@@ -14,7 +14,7 @@ from apiclient.errors import HttpError
 # Module API
 
 class Table(object):
-    """BigQuery native table representation.
+    """BigQuery native table gateway.
     """
 
     # Public
@@ -68,22 +68,6 @@ class Table(object):
 
         return self.__table_id
 
-    @property
-    def is_existent(self):
-        """Return table is existent.
-        """
-
-        # If schema
-        try:
-            self.schema
-            return True
-
-        # No schema
-        except HttpError as error:
-            if error.resp.status != 404:
-                raise
-            return False
-
     def create(self, schema):
         """Create table by schema.
 
@@ -99,8 +83,8 @@ class Table(object):
 
         """
 
-        # Check not created
-        if self.created:
+        # Check not existent
+        if self.is_existent:
             message = 'Table is already existent.'
             raise RuntimeError(message)
 
@@ -120,13 +104,53 @@ class Table(object):
                 datasetId=self.__dataset_id,
                 body=body).execute()
 
+    def delete(self):
+        """Delete table.
+
+        Raises
+        ------
+        RuntimeError
+            If table is not existent.
+
+        """
+
+        # Check existent
+        if not self.is_existent:
+            message = 'Table is not existent.'
+            raise RuntimeError(message)
+
+        # Make request
+        self.__service.tables().delete(
+                projectId=self.__project_id,
+                datasetId=self.__dataset_id,
+                table_id=self.__table_id).execute()
+
+        # Remove schema cache
+        self.__schema = None
+
+    @property
+    def is_existent(self):
+        """Return table is existent.
+        """
+
+        # If schema
+        try:
+            self.schema
+            return True
+
+        # No schema
+        except HttpError as error:
+            if error.resp.status != 404:
+                raise
+            return False
+
     @property
     def schema(self):
         """Return schema dict.
         """
 
         # Create cache
-        if not hasattr(self, '__schema'):
+        if getattr(self, '__schema', None) is None:
 
             # Get response
             response = self.__service.tables().get(
