@@ -56,6 +56,41 @@ class Table(object):
     def table_id(self):
         return self.__table_id
 
+    @property
+    def is_existent(self):
+        """Return table is existent.
+        """
+
+        # If schema
+        try:
+            self.schema
+            return True
+
+        # No schema
+        except HttpError as error:
+            if error.resp.status != 404:
+                raise
+            return False
+
+    @property
+    def schema(self):
+        """Return schema dict.
+        """
+
+        # Create cache
+        if not hasattr(self, '__schema'):
+
+            # Get response
+            response = self.__service.tables().get(
+                    projectId=self.__project_id,
+                    datasetId=self.__dataset_id,
+                    tableId=self.__table_id).execute()
+
+            # Get schema
+            self.__schema = response['schema']
+
+        return self.__schema
+
     def create(self, schema):
         """Create table by schema.
 
@@ -91,41 +126,6 @@ class Table(object):
                 projectId=self.__project_id,
                 datasetId=self.__dataset_id,
                 body=body).execute()
-
-    @property
-    def created(self):
-        """Return table is existent.
-        """
-
-        # If schema
-        try:
-            self.schema
-            return True
-
-        # No schema
-        except HttpError as error:
-            if error.resp.status != 404:
-                raise
-            return False
-
-    @property
-    def schema(self):
-        """Return schema dict.
-        """
-
-        # Create cache
-        if not hasattr(self, '__schema'):
-
-            # Get response
-            response = self.__service.tables().get(
-                    projectId=self.__project_id,
-                    datasetId=self.__dataset_id,
-                    tableId=self.__table_id).execute()
-
-            # Get schema
-            self.__schema = response['schema']
-
-        return self.__schema
 
     def get_data(self):
         """Return table's data.

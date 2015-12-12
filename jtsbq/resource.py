@@ -23,34 +23,36 @@ class Resource(object):
 
     # Public
 
-    def __init__(self, service, project_id, dataset_id, table_id,
-                 schema=None):
+    def __init__(self, service, project_id, dataset_id, table_id):
 
-        # Convert schema
-        if schema is not None:
-            schema = schema_module.resource2table(schema)
-
-        # Create table
+        # Initiate table
         self.__table = Table(
                 service=service,
                 project_id=project_id,
                 dataset_id=dataset_id,
-                table_id=table_id,
-                schema=schema)
+                table_id=table_id)
 
     def __repr__(self):
 
-        # Template
+        # Template and format
         template = 'Resource <table: {table}>'
-
-        # Format
         text = template.format(table=self.__table)
 
         return text
 
     @property
     def table(self):
+        """Return underlaying table.
+        """
+
         return self.__table
+
+    @property
+    def is_existent(self):
+        """Return if resource (underlaying table) is existent.
+        """
+
+        return self.__table.is_existent
 
     @property
     def schema(self):
@@ -66,6 +68,23 @@ class Resource(object):
             self.__schema = schema
 
         return self.__schema
+
+    def create(self, schema):
+        """Create resource by JSON Table schema.
+
+        Raises
+        ------
+        RuntimeError
+            If resource (underlaying table) is already existent.
+
+        """
+
+        # Convert schema
+        if schema is not None:
+            schema = schema_module.resource2table(schema)
+
+        # Create table
+        self.__table.create(schema)
 
     def get_data(self):
         """Return data generator.
