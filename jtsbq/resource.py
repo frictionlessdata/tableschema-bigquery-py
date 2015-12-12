@@ -54,21 +54,6 @@ class Resource(object):
 
         return self.__table.is_existent
 
-    @property
-    def schema(self):
-        """Return schema.
-        """
-
-        # Create cache
-        if not hasattr(self, '__schema'):
-
-            # Get and convert schema
-            schema = self.__table.schema
-            schema = schema_module.table2resource(schema)
-            self.__schema = schema
-
-        return self.__schema
-
     def create(self, schema):
         """Create resource by JSON Table schema.
 
@@ -86,18 +71,20 @@ class Resource(object):
         # Create table
         self.__table.create(schema)
 
-    def get_data(self):
-        """Return data generator.
+    @property
+    def schema(self):
+        """Return schema.
         """
 
-        # Get model and data
-        model = SchemaModel(self.schema)
-        data = self.__table.get_data()
+        # Create cache
+        if not hasattr(self, '__schema'):
 
-        # Yield converted data
-        for row in data:
-            row = tuple(model.convert_row(*row))
-            yield row
+            # Get and convert schema
+            schema = self.__table.schema
+            schema = schema_module.table2resource(schema)
+            self.__schema = schema
+
+        return self.__schema
 
     def add_data(self, data):
         """Add data to resource.
@@ -112,6 +99,35 @@ class Resource(object):
 
         # Add data to table
         self.__table.add_data(cdata)
+
+    def get_data(self):
+        """Return data generator.
+        """
+
+        # Get model and data
+        model = SchemaModel(self.schema)
+        data = self.__table.get_data()
+
+        # Yield converted data
+        for row in data:
+            row = tuple(model.convert_row(*row))
+            yield row
+
+    def import_data(self, path, **options):
+        """Import data from file.
+        """
+
+        # Get data
+        data = []
+        with topen(path, **options) as table:
+            # TODO: add header row config?
+            table.add_processor(processors.Headers())
+            table.add_processor(processors.Schema(self.schema))
+            for row in table.readrow():
+                data.append(row)
+
+        # Add data to table
+        self.__table.add_data(data)
 
     def export_schema(self, path):
         """Export schema to file.
@@ -139,22 +155,6 @@ class Resource(object):
             writer.writerow(model.headers)
             for row in self.get_data():
                 writer.writerow(row)
-
-    def import_data(self, path, **options):
-        """Import data from file.
-        """
-
-        # Get data
-        data = []
-        with topen(path, **options) as table:
-            # TODO: add header row config?
-            table.add_processor(processors.Headers())
-            table.add_processor(processors.Schema(self.schema))
-            for row in table.readrow():
-                data.append(row)
-
-        # Add data to table
-        self.__table.add_data(data)
 
     # Private
 

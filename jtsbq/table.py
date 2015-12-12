@@ -72,25 +72,6 @@ class Table(object):
                 raise
             return False
 
-    @property
-    def schema(self):
-        """Return schema dict.
-        """
-
-        # Create cache
-        if not hasattr(self, '__schema'):
-
-            # Get response
-            response = self.__service.tables().get(
-                    projectId=self.__project_id,
-                    datasetId=self.__dataset_id,
-                    tableId=self.__table_id).execute()
-
-            # Get schema
-            self.__schema = response['schema']
-
-        return self.__schema
-
     def create(self, schema):
         """Create table by schema.
 
@@ -127,23 +108,24 @@ class Table(object):
                 datasetId=self.__dataset_id,
                 body=body).execute()
 
-    def get_data(self):
-        """Return table's data.
+    @property
+    def schema(self):
+        """Return schema dict.
         """
 
-        # Get respose
-        template = 'SELECT * FROM [{project_id}:{dataset_id}.{table_id}];'
-        query = template.format(
-                project_id=self.__project_id,
-                dataset_id=self.__dataset_id,
-                table_id=self.__table_id)
-        response = self.__service.jobs().query(
-            projectId=self.__project_id,
-            body={'query': query}).execute()
+        # Create cache
+        if not hasattr(self, '__schema'):
 
-        # Yield rows
-        for row in response['rows']:
-            yield tuple(field['v'] for field in row['f'])
+            # Get response
+            response = self.__service.tables().get(
+                    projectId=self.__project_id,
+                    datasetId=self.__dataset_id,
+                    tableId=self.__table_id).execute()
+
+            # Get schema
+            self.__schema = response['schema']
+
+        return self.__schema
 
     def add_data(self, data):
         """Add data to table.
@@ -184,6 +166,24 @@ class Table(object):
             body=body,
             media_body=media_body).execute()
         self.__wait_response(response)
+
+    def get_data(self):
+        """Return table's data.
+        """
+
+        # Get respose
+        template = 'SELECT * FROM [{project_id}:{dataset_id}.{table_id}];'
+        query = template.format(
+                project_id=self.__project_id,
+                dataset_id=self.__dataset_id,
+                table_id=self.__table_id)
+        response = self.__service.jobs().query(
+            projectId=self.__project_id,
+            body={'query': query}).execute()
+
+        # Yield rows
+        for row in response['rows']:
+            yield tuple(field['v'] for field in row['f'])
 
     # Private
 

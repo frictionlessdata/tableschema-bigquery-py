@@ -25,6 +25,6 @@ resource = Resource(service, 'frictionless-data-test', 'jsontableschema', 'downl
 data = resource.get_data()
 print(resource.schema)
 print(list(data))
+resource.import_data('examples/data/spending/data.csv')
 resource.export_schema('tmp/schema.json')
 resource.export_data('tmp/data.csv')
-resource.import_data('examples/data/spending/data.csv')
