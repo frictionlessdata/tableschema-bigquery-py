@@ -8,6 +8,7 @@ import io
 import csv
 import time
 from apiclient.http import MediaIoBaseUpload
+from apiclient.errors import HttpError
 
 
 # Module API
@@ -18,24 +19,13 @@ class Table(object):
 
     # Public
 
-    def __init__(self, service, project_id, dataset_id, table_id,
-                 schema=None):
+    def __init__(self, service, project_id, dataset_id, table_id):
 
         # Set attributes
         self.__service = service
         self.__project_id = project_id
         self.__dataset_id = dataset_id
         self.__table_id = table_id
-
-        # Ensure existent table
-        try:
-            self.schema
-        except Exception:
-            # TODO: filter exceptions
-            if schema is None:
-                message = 'Non existent table requires schema argument'
-                raise RuntimeError(message)
-            self.__create_table(schema)
 
     def __repr__(self):
 
@@ -65,6 +55,58 @@ class Table(object):
     @property
     def table_id(self):
         return self.__table_id
+
+    def create(self, schema):
+        """Create table by schema.
+
+        Parameters
+        ----------
+        schema: dict
+            BigQuery schema descriptor.
+
+        Raises
+        ------
+        RuntimeError
+            If table is already existent.
+
+        """
+
+        # Check not created
+        if self.created:
+            message = 'Table is already existent.'
+            raise RuntimeError(message)
+
+        # Prepare job body
+        body = {
+            'tableReference': {
+                'projectId': self.__project_id,
+                'datasetId': self.__dataset_id,
+                'tableId': self.__table_id,
+            },
+            'schema': schema,
+        }
+
+        # Make request
+        self.__service.tables().get(
+                projectId=self.__project_id,
+                datasetId=self.__dataset_id,
+                body=body).execute()
+
+    @property
+    def created(self):
+        """Return table is existent.
+        """
+
+        # If schema
+        try:
+            self.schema
+            return True
+
+        # No schema
+        except HttpError as error:
+            if error.resp.status != 404:
+                raise
+            return False
 
     @property
     def schema(self):
