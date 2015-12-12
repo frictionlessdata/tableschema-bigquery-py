@@ -42,18 +42,30 @@ class Table(object):
 
     @property
     def service(self):
+        """Return BigQuery service instance.
+        """
+
         return self.__service
 
     @property
     def project_id(self):
+        """Return BigQuery project identifier.
+        """
+
         return self.__project_id
 
     @property
     def dataset_id(self):
+        """Return BigQuery dataset identifier.
+        """
+
         return self.__dataset_id
 
     @property
     def table_id(self):
+        """Return BigQuery table identifier.
+        """
+
         return self.__table_id
 
     @property
@@ -186,24 +198,6 @@ class Table(object):
             yield tuple(field['v'] for field in row['f'])
 
     # Private
-
-    def __create_table(self, schema):
-
-        # Prepare job body
-        body = {
-            'tableReference': {
-                'projectId': self.__project_id,
-                'datasetId': self.__dataset_id,
-                'tableId': self.__table_id,
-            },
-            'schema': schema,
-        }
-
-        # Make request
-        self.__service.tables().get(
-                projectId=self.__project_id,
-                datasetId=self.__dataset_id,
-                body=body).execute()
 
     def __wait_response(self, response):
 
