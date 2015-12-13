@@ -4,6 +4,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import os
 import io
 import csv
 import six
@@ -18,7 +19,7 @@ from .table import Table
 # Module API
 
 class Resource(object):
-    """Data resource gateway.
+    """Data resource stored on BigQuery gateway.
     """
 
     # Public
@@ -46,6 +47,13 @@ class Resource(object):
         """
 
         return self.__table
+
+    @property
+    def is_existent(self):
+        """Return if resource (underlaying table) is existent.
+        """
+
+        return self.__table.is_existent
 
     def create(self, schema):
         """Create resource by JSON Table schema.
@@ -76,13 +84,6 @@ class Resource(object):
 
         # Delete table
         self.__table.delete()
-
-    @property
-    def is_existent(self):
-        """Return if resource (underlaying table) is existent.
-        """
-
-        return self.__table.is_existent
 
     @property
     def schema(self):
@@ -146,6 +147,9 @@ class Resource(object):
         """Export schema to file.
         """
 
+        # Ensure directory
+        self.__ensure_dir(path)
+
         # Write dump on disk
         with io.open(path,
                      mode=self.__write_mode,
@@ -159,6 +163,9 @@ class Resource(object):
         # Get model
         model = SchemaModel(self.schema)
 
+        # Ensure directory
+        self.__ensure_dir(path)
+
         # Write csv on disk
         with io.open(path,
                      mode=self.__write_mode,
@@ -170,6 +177,11 @@ class Resource(object):
                 writer.writerow(row)
 
     # Private
+
+    def __ensure_dir(self, path):
+        dirpath = os.path.dirname(path)
+        if not os.path.exists(dirpath):
+            os.makedirs(dirpath)
 
     @property
     def __write_mode(self):

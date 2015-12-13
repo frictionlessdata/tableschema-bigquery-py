@@ -68,6 +68,22 @@ class Table(object):
 
         return self.__table_id
 
+    @property
+    def is_existent(self):
+        """Return table is existent.
+        """
+
+        # If schema
+        try:
+            self.schema
+            return True
+
+        # No schema
+        except HttpError as error:
+            if error.resp.status != 404:
+                raise
+            return False
+
     def create(self, schema):
         """Create table by schema.
 
@@ -85,7 +101,7 @@ class Table(object):
 
         # Check not existent
         if self.is_existent:
-            message = 'Table is already existent.'
+            message = 'Table "%s" is already existent.' % self
             raise RuntimeError(message)
 
         # Prepare job body
@@ -99,7 +115,7 @@ class Table(object):
         }
 
         # Make request
-        self.__service.tables().get(
+        self.__service.tables().insert(
                 projectId=self.__project_id,
                 datasetId=self.__dataset_id,
                 body=body).execute()
@@ -116,33 +132,17 @@ class Table(object):
 
         # Check existent
         if not self.is_existent:
-            message = 'Table is not existent.'
+            message = 'Table "%s" is not existent.' % self
             raise RuntimeError(message)
 
         # Make request
         self.__service.tables().delete(
                 projectId=self.__project_id,
                 datasetId=self.__dataset_id,
-                table_id=self.__table_id).execute()
+                tableId=self.__table_id).execute()
 
         # Remove schema cache
         self.__schema = None
-
-    @property
-    def is_existent(self):
-        """Return table is existent.
-        """
-
-        # If schema
-        try:
-            self.schema
-            return True
-
-        # No schema
-        except HttpError as error:
-            if error.resp.status != 404:
-                raise
-            return False
 
     @property
     def schema(self):

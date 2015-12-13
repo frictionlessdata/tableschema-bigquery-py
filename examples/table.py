@@ -20,8 +20,18 @@ credentials = SignedJwtAssertionCredentials(client_email, private_key, scope)
 service = build('bigquery', 'v2', credentials=credentials)
 
 # Table
-table = Table(service, 'frictionless-data-test', 'jsontableschema', 'download')
-table.add_data([('test', 'test', 'test', 1.0)])
-data = table.get_data()
+table = Table(service, 'frictionless-data-test', 'jsontableschema', 'test')
+
+# Delete
+if table.is_existent:
+    table.delete()
+
+# Create
+print(table.is_existent)
+table.create({'fields': [{'name': 'id', 'type': 'STRING'}]})
+print(table.is_existent)
 print(table.schema)
-print(list(data))
+
+# Add data
+table.add_data([('id1',), ('id2',)])
+print(list(table.get_data()))
