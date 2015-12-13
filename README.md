@@ -9,7 +9,7 @@ Generate and load BigQuery tables based on JSON Table Schema descriptors.
 
 This section is intended to be used by end-users of the library.
 
-### Download/upload table
+### Resource and Table
 
 > See section below how to get authentificated service.
 
@@ -101,7 +101,7 @@ data.csv -> BigQuery talbe data
 
 #### Drivers
 
-Default Google BigQuery client is used - [docs](https://developers.google.com/resources/api-libraries/documentation/bigquery/v2/python/latest/)
+Default Google BigQuery client is used - [docs](https://developers.google.com/resources/api-libraries/documentation/bigquery/v2/python/latest/).
 
 ### Documentation
 
