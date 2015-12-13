@@ -20,13 +20,16 @@ converters and validators:
 from jtsbq import Resource
 
 resource = Resource(<service>, 'project_id', 'dataset_id', 'table_id')
+
 resource.create(schema)
 resource.schema
-resource.get_data()
+
 resource.add_data(data)
+resource.get_data()
+
+resource.import_data(path)
 resource.export_schema(path)
 resource.export_data(path)
-resource.import_data(path)
 ```
 
 Table represents native Big Query table:
@@ -35,10 +38,12 @@ Table represents native Big Query table:
 from jtsbq import Table
 
 table = Table(<service>, 'project_id', 'dataset_id', 'table_id')
+
 table.create(schema)
 table.schema
-table.get_data()
+
 table.add_data(data)
+table.get_data()
 ```
 
 ### Authentificated service
@@ -65,6 +70,44 @@ credentials = SignedJwtAssertionCredentials(client_email, private_key, scope)
 service = build('bigquery', 'v2', credentials=credentials)
 
 ```
+### Design Overview
+
+#### Entities
+
+- Table
+
+    Table is a native BigQuery table. Schema and data are used as it is in BigQuery.
+    For example to create a Table user has to pass a BigQuery compatible schema.
+
+- Resource
+
+    Resource is a Table wrapperd in JSONTableSchema converters and validators.
+    That means user interacts with Resource in JSONTableSchema terms. For example
+    to create an underlaying Table user has to pass JSONTableSchema compatible schema.
+    All data are returned after JSONTableSchema conversion.
+
+> Resource is a JSONTableSchema facade to Table (BigQuery) backend.
+
+Table and Resource are geteways by their nature. It means user can initiate
+Table without real BigQuery table creation then call `create` or `delete` to
+delete the real table without instance destruction.
+
+#### Mappings
+
+```
+schema.json -> BigQuery table schema
+data.csv -> BigQuery talbe data
+```
+
+#### Drivers
+
+Default Google BigQuery client is used - [docs](https://developers.google.com/resources/api-libraries/documentation/bigquery/v2/python/latest/)
+
+### Documentation
+
+API documentation is presented as docstings:
+- [Resource](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jtsbq/resource.py)
+- [Table](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jtsbq/table.py)
 
 ## Development
 
