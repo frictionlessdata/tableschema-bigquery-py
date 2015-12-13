@@ -20,6 +20,18 @@ from .table import Table
 
 class Resource(object):
     """Data resource stored on BigQuery gateway.
+
+    Parameters
+    ----------
+    service: object
+        Authentificated BigQuery service.
+    project_id: str
+        BigQuery project identifier.
+    dataset_id: str
+        BigQuery dataset identifier.
+    table_id: str
+        BigQuery table identifier.
+
     """
 
     # Public
@@ -87,7 +99,7 @@ class Resource(object):
 
     @property
     def schema(self):
-        """Return schema.
+        """Return JSONTableSchema dict.
         """
 
         # Create cache
@@ -102,6 +114,12 @@ class Resource(object):
 
     def add_data(self, data):
         """Add data to resource.
+
+        Parameters
+        ----------
+        data: list
+            List of data tuples.
+
         """
 
         # Get model and data
@@ -116,6 +134,11 @@ class Resource(object):
 
     def get_data(self):
         """Return data generator.
+
+        Returns
+        -------
+        generator
+            Generator of data tuples.
         """
 
         # Get model and data
@@ -129,6 +152,14 @@ class Resource(object):
 
     def import_data(self, path, **options):
         """Import data from file.
+
+        Parameters
+        ----------
+        path: str
+            Tabulator compatible path to data.
+        options: dict
+            Tabulator options.
+
         """
 
         # Get data
@@ -145,6 +176,12 @@ class Resource(object):
 
     def export_schema(self, path):
         """Export schema to file.
+
+        Parameters
+        ----------
+        path: str
+            Path where to store schema file.
+
         """
 
         # Ensure directory
@@ -158,6 +195,11 @@ class Resource(object):
 
     def export_data(self, path):
         """Export data to file.
+
+        Parameters
+        ----------
+        path: str
+            Path where to store data file.
         """
 
         # Get model

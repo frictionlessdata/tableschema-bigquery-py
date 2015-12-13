@@ -15,6 +15,18 @@ from apiclient.errors import HttpError
 
 class Table(object):
     """BigQuery native table gateway.
+
+    Parameters
+    ----------
+    service: object
+        Authentificated BigQuery service.
+    project_id: str
+        BigQuery project identifier.
+    dataset_id: str
+        BigQuery dataset identifier.
+    table_id: str
+        BigQuery table identifier.
+
     """
 
     # Public
@@ -70,7 +82,7 @@ class Table(object):
 
     @property
     def is_existent(self):
-        """Return table is existent.
+        """Return table if is existent.
         """
 
         # If schema
@@ -165,6 +177,12 @@ class Table(object):
 
     def add_data(self, data):
         """Add data to table.
+
+        Parameters
+        ----------
+        data: list
+            List of data tuples.
+
         """
 
         # Convert data to byte stream csv
@@ -205,6 +223,12 @@ class Table(object):
 
     def get_data(self):
         """Return table's data.
+
+        Returns
+        -------
+        generator
+            Generator of data tuples.
+
         """
 
         # Get respose
