@@ -20,6 +20,7 @@ converters and validators:
 from jtsbq import Resource
 
 resource = Resource(<service>, 'project_id', 'dataset_id', 'table_id')
+resource.create(schema)
 resource.schema
 resource.get_data()
 resource.add_data(data)
@@ -34,6 +35,7 @@ Table represents native Big Query table:
 from jtsbq import Table
 
 table = Table(<service>, 'project_id', 'dataset_id', 'table_id')
+table.create(schema)
 table.schema
 table.get_data()
 table.add_data(data)
