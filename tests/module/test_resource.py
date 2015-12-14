@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import json
 import pytest
 import unittest
-from mock import MagicMock, patch, mock_open, ANY
+from mock import MagicMock, patch, mock_open, call, ANY
 from importlib import import_module
 module = import_module('jtsbq.resource')
 
@@ -148,4 +148,21 @@ class TestResource(unittest.TestCase):
         dump.assert_called_with(self.resource_schema, ANY, indent=4)
 
     def test_export_data(self):
-        pass
+
+        # Mocks
+        self.table.schema = self.table_schema
+        self.table.get_data.return_value = self.table_data
+        patch.object(module.os, 'makedirs').start()
+        open = patch.object(module.io, 'open', mock_open()).start()
+        csv = patch.object(module, 'csv').start()
+
+        # Method call
+        self.resource.export_data('path')
+
+        # Assert calls
+        open.assert_called_with('path', mode=ANY, encoding=ANY, newline=ANY)
+        csv.writer.assert_called_with(ANY)
+        csv.writer.return_value.writerow.assert_has_calls([
+            call(['id', 'name']),
+            call((1, 'name1')),
+            call((2, 'name2'))])
