@@ -29,6 +29,7 @@ _RESOURCE2TABLE_MAPPING = {
     'integer': 'INTEGER',
     'number': 'FLOAT',
     'boolean': 'BOOLEAN',
+    'datetime': 'TIMESTAMP',
 }
 
 
