@@ -1,24 +1,20 @@
 {
     "fields": [
         {
-            "format": "default",
-            "type": "string",
-            "name": "id"
+            "name": "id",
+            "type": "string"
         },
         {
-            "format": "default",
-            "type": "string",
-            "name": "name"
+            "name": "name",
+            "type": "string"
         },
         {
-            "format": "default",
-            "type": "string",
-            "name": "description"
+            "name": "current",
+            "type": "boolean"
         },
         {
-            "format": "default",
-            "type": "number",
-            "name": "amount"
+            "name": "amount",
+            "type": "number"
         }
     ]
 }

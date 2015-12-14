@@ -78,7 +78,8 @@ class Resource(object):
         """
 
         # Convert schema
-        schema = schema_module.resource2table(schema)
+        model = SchemaModel(schema)
+        schema = schema_module.resource2table({'fields': model.fields})
 
         # Create table
         self.__table.create(schema)

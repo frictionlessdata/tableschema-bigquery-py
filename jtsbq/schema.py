@@ -28,6 +28,7 @@ _RESOURCE2TABLE_MAPPING = {
     'string': 'STRING',
     'integer': 'INTEGER',
     'number': 'FLOAT',
+    'boolean': 'BOOLEAN',
 }
 
 
