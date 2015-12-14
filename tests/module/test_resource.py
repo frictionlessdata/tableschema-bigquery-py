@@ -74,7 +74,7 @@ class TestResource(unittest.TestCase):
         self.table.is_existent = False
 
         # Assert values
-        assert not self.table.is_existent
+        assert not self.resource.is_existent
 
     def test_create(self):
 
