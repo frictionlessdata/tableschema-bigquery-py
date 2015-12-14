@@ -38,6 +38,7 @@ class Table(object):
         self.__project_id = project_id
         self.__dataset_id = dataset_id
         self.__table_id = table_id
+        self.__schema = None
 
     def __repr__(self):
 

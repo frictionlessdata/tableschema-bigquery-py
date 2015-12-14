@@ -78,8 +78,7 @@ class Resource(object):
         """
 
         # Convert schema
-        if schema is not None:
-            schema = schema_module.resource2table(schema)
+        schema = schema_module.resource2table(schema)
 
         # Create table
         self.__table.create(schema)
