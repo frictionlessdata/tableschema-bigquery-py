@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import json
 import pytest
 import unittest
-from mock import MagicMock, patch
+from mock import MagicMock, patch, mock_open, ANY
 from importlib import import_module
 module = import_module('jtsbq.resource')
 
@@ -133,7 +133,19 @@ class TestResource(unittest.TestCase):
         self.table.add_data.assert_called_with(self.table_data)
 
     def test_export_schema(self):
-        pass
+
+        # Mocks
+        self.table.schema = self.table_schema
+        patch.object(module.os, 'makedirs').start()
+        open = patch.object(module.io, 'open', mock_open()).start()
+        dump = patch.object(module.json, 'dump').start()
+
+        # Method call
+        self.resource.export_schema('path')
+
+        # Assert calls
+        open.assert_called_with('path', mode=ANY, encoding=ANY)
+        dump.assert_called_with(self.resource_schema, ANY, indent=4)
 
     def test_export_data(self):
         pass
