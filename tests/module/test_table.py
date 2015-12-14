@@ -33,6 +33,11 @@ class TestTable(unittest.TestCase):
 
     # Tests
 
+    def test___repr__(self):
+
+        # Assert values
+        assert repr(self.table)
+
     def test_service(self):
 
         # Assert values

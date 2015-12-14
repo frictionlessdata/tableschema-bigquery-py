@@ -53,6 +53,11 @@ class TestResource(unittest.TestCase):
 
     # Tests
 
+    def test___repr__(self):
+
+        # Assert values
+        assert repr(self.resource)
+
     def test_table(self):
 
         # Assert values
