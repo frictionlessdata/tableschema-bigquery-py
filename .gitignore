@@ -65,4 +65,5 @@ venv3/
 .tmuxp.yml
 
 # Project
+.credentials.json
 tmp/
