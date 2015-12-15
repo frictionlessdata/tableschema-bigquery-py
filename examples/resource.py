@@ -14,6 +14,7 @@ import_schema_path = os.getenv('IMPORT_SCHEMA_PATH', 'examples/data/spending/sch
 export_schema_path = os.getenv('EXPORT_SCHEMA_PATH', 'tmp/schema.json')
 import_data_path = os.getenv('IMPORT_DATA_PATH', 'examples/data/spending/data.csv')
 export_data_path = os.getenv('EXPORT_DATA_PATH', 'tmp/data.csv')
+table_id = os.getenv('TABLE_ID', 'resource_test')
 
 # Parameters
 client_email = os.environ['GOOGLE_CLIENT_EMAIL']
@@ -26,7 +27,7 @@ credentials = SignedJwtAssertionCredentials(client_email, private_key, scope)
 service = build('bigquery', 'v2', credentials=credentials)
 
 # Resource
-resource = Resource(service, project_id, 'jsontableschema', 'resource_test')
+resource = Resource(service, project_id, 'jsontableschema', table_id)
 
 # Delete
 print('[Delete]')
