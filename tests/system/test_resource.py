@@ -14,7 +14,6 @@ import tempfile
 import unittest
 
 
-@unittest.skip('travis problems')
 class TestResource(unittest.TestCase):
 
     # Helpers
@@ -22,10 +21,8 @@ class TestResource(unittest.TestCase):
     def setUp(self):
 
         # Import files
-        datadir = os.path.join(
-                os.path.dirname(__file__), '..', '..', 'examples', 'data', 'spending')
-        self.import_schema_path = os.path.join(datadir, 'schema.json')
-        self.import_data_path = os.path.join(datadir, 'data.csv')
+        self.import_schema_path = 'examples/data/spending/schema.json'
+        self.import_data_path = 'examples/data/spending/data.csv'
 
         # Export files
         _, self.export_schema_path = tempfile.mkstemp()

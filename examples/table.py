@@ -4,23 +4,24 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import io
 import os
-from jtsbq import Table
+import sys
+import json
 from apiclient.discovery import build
-from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.client import GoogleCredentials
 
+sys.path.insert(0, '.')
+from jtsbq import Table
 
-# Parameters
-client_email = os.environ['GOOGLE_CLIENT_EMAIL']
-private_key = os.environ['GOOGLE_PRIVATE_KEY']
-project_id = os.environ['GOOGLE_PROJECT_ID']
-scope = 'https://www.googleapis.com/auth/bigquery'
 
 # Service
-credentials = SignedJwtAssertionCredentials(client_email, private_key, scope)
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
+credentials = GoogleCredentials.get_application_default()
 service = build('bigquery', 'v2', credentials=credentials)
 
 # Table
+project_id = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
 table = Table(service, project_id, 'jsontableschema', 'table_test')
 
 # Delete

@@ -49,29 +49,22 @@ table.get_data()
 ### Authentificated service
 
 To start using Google BigQuery service:
-- Create a project - [link](https://console.developers.google.com/home/dashboard)
+- Create a new project - [link](https://console.developers.google.com/home/dashboard)
 - Create a service key - [link](https://console.developers.google.com/apis/credentials)
-- Add environment variables extracted from previous step json:
-    - GOOGLE_CLIENT_EMAIL
-    - GOOGLE_PRIVATE_KEY (for bash `export VAR=$'...'` to do not escape newlines)
-    - GOOGLE_PROJECT_ID
+- Download json credentials and set `GOOGLE_APPLICATION_CREDENTIALS` environment variable
 
-Then you can use environment variables to get `client_email` and `private_key`:
+For example:
 
 ```python
 import os
 from apiclient.discovery import build
-from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.client import GoogleCredentials
 
-client_email = os.environ['GOOGLE_CLIENT_EMAIL']
-private_key = os.environ['GOOGLE_PRIVATE_KEY']
-project_id = os.environ['GOOGLE_PROJECT_ID']
-scope = 'https://www.googleapis.com/auth/bigquery'
-
-credentials = SignedJwtAssertionCredentials(client_email, private_key, scope)
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
+credentials = GoogleCredentials.get_application_default()
 service = build('bigquery', 'v2', credentials=credentials)
-
 ```
+
 ### Design Overview
 
 #### Entities

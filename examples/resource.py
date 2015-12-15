@@ -4,29 +4,31 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import io
 import os
-from jtsbq import Resource
+import sys
+import json
 from apiclient.discovery import build
-from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.client import GoogleCredentials
 
-# Arguments
+sys.path.insert(0, '.')
+from jtsbq import Resource
+
+
+# Parameters
 import_schema_path = os.getenv('IMPORT_SCHEMA_PATH', 'examples/data/spending/schema.json')
 export_schema_path = os.getenv('EXPORT_SCHEMA_PATH', 'tmp/schema.json')
 import_data_path = os.getenv('IMPORT_DATA_PATH', 'examples/data/spending/data.csv')
 export_data_path = os.getenv('EXPORT_DATA_PATH', 'tmp/data.csv')
 table_id = os.getenv('TABLE_ID', 'resource_test')
 
-# Parameters
-client_email = os.environ['GOOGLE_CLIENT_EMAIL']
-private_key = os.environ['GOOGLE_PRIVATE_KEY']
-project_id = os.environ['GOOGLE_PROJECT_ID']
-scope = 'https://www.googleapis.com/auth/bigquery'
-
 # Service
-credentials = SignedJwtAssertionCredentials(client_email, private_key, scope)
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
+credentials = GoogleCredentials.get_application_default()
 service = build('bigquery', 'v2', credentials=credentials)
 
-# Resource
+# Table
+project_id = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
 resource = Resource(service, project_id, 'jsontableschema', table_id)
 
 # Delete
