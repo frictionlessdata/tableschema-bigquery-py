@@ -232,15 +232,11 @@ class Table(object):
 
         """
 
-        # Get respose
-        template = 'SELECT * FROM [{project_id}:{dataset_id}.{table_id}];'
-        query = template.format(
-                project_id=self.__project_id,
-                dataset_id=self.__dataset_id,
-                table_id=self.__table_id)
-        response = self.__service.jobs().query(
-            projectId=self.__project_id,
-            body={'query': query}).execute()
+        # Get response
+        response = self.__service.tabledata().list(
+                projectId=self.__project_id,
+                datasetId=self.__dataset_id,
+                tableId=self.__table_id).execute()
 
         # Yield rows
         for row in response['rows']:
