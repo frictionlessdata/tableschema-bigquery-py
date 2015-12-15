@@ -15,29 +15,36 @@ sys.path.insert(0, '.')
 from jtsbq import Table
 
 
-# Service
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
-credentials = GoogleCredentials.get_application_default()
-service = build('bigquery', 'v2', credentials=credentials)
+def run(dataset_id='jsontableschema',
+        table_id='table_test'):
 
-# Table
-project_id = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
-table = Table(service, project_id, 'jsontableschema', 'table_test')
+    # Service
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
+    credentials = GoogleCredentials.get_application_default()
+    service = build('bigquery', 'v2', credentials=credentials)
 
-# Delete
-print('[Delete]')
-print(table.is_existent)
-if table.is_existent:
-    table.delete()
+    # Table
+    project_id = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
+    table = Table(service, project_id, dataset_id, table_id)
 
-# Create
-print('[Create]')
-print(table.is_existent)
-table.create({'fields': [{'name': 'id', 'type': 'STRING'}]})
-print(table.is_existent)
-print(table.schema)
+    # Delete
+    print('[Delete]')
+    print(table.is_existent)
+    if table.is_existent:
+        table.delete()
 
-# Add data
-print('[Add data]')
-table.add_data([('id1',), ('id2',)])
-print(list(table.get_data()))
+    # Create
+    print('[Create]')
+    print(table.is_existent)
+    table.create({'fields': [{'name': 'id', 'type': 'STRING'}]})
+    print(table.is_existent)
+    print(table.schema)
+
+    # Add data
+    print('[Add data]')
+    table.add_data([('id1',), ('id2',)])
+    print(list(table.get_data()))
+
+
+if __name__ == '__main__':
+    run()

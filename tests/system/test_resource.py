@@ -13,6 +13,8 @@ import runpy
 import tempfile
 import unittest
 
+from examples.resource import run
+
 
 class TestResource(unittest.TestCase):
 
@@ -20,21 +22,12 @@ class TestResource(unittest.TestCase):
 
     def setUp(self):
 
-        # Import files
-        self.import_schema_path = 'examples/data/spending/schema.json'
-        self.import_data_path = 'examples/data/spending/data.csv'
-
         # Export files
         _, self.export_schema_path = tempfile.mkstemp()
         _, self.export_data_path = tempfile.mkstemp()
 
-        # Update environ
-        os.environ['TABLE_ID'] = (
-                'resource_test_%s_%s' % (sys.version_info.major, sys.version_info.minor))
-        os.environ['IMPORT_SCHEMA_PATH'] = self.import_schema_path
-        os.environ['EXPORT_SCHEMA_PATH'] = self.export_schema_path
-        os.environ['IMPORT_DATA_PATH'] = self.import_data_path
-        os.environ['EXPORT_DATA_PATH'] = self.export_data_path
+        # Python version
+        self.version = '%s_%s' % (sys.version_info.major, sys.version_info.minor)
 
     def tearDown(self):
 
@@ -50,15 +43,18 @@ class TestResource(unittest.TestCase):
     def test(self):
 
         # Run example
-        runpy.run_module('examples.resource')
+        scope = run(
+            table_id='resource_test_%s' % self.version,
+            export_schema_path=self.export_schema_path,
+            export_data_path=self.export_data_path)
 
         # Assert schema
         actual = json.load(io.open(self.export_schema_path, encoding='utf-8'))
-        expected = json.load(io.open(self.import_schema_path, encoding='utf-8'))
+        expected = json.load(io.open(scope['import_schema_path'], encoding='utf-8'))
         assert actual == expected
 
         # Assert data
         # TODO: parse csv
         actual = io.open(self.export_data_path, encoding='utf-8').read()
-        expected = io.open(self.import_data_path, encoding='utf-8').read()
+        expected = io.open(scope['import_data_path'], encoding='utf-8').read()
         assert actual == expected

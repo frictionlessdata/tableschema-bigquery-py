@@ -15,47 +15,52 @@ sys.path.insert(0, '.')
 from jtsbq import Resource
 
 
-# Parameters
-import_schema_path = os.getenv('IMPORT_SCHEMA_PATH', 'examples/data/spending/schema.json')
-export_schema_path = os.getenv('EXPORT_SCHEMA_PATH', 'tmp/schema.json')
-import_data_path = os.getenv('IMPORT_DATA_PATH', 'examples/data/spending/data.csv')
-export_data_path = os.getenv('EXPORT_DATA_PATH', 'tmp/data.csv')
-table_id = os.getenv('TABLE_ID', 'resource_test')
+def run(import_schema_path='examples/data/spending/schema.json',
+        export_schema_path='tmp/schema.json',
+        import_data_path='examples/data/spending/data.csv',
+        export_data_path='tmp/data.csv',
+        table_id='resource_test'):
 
-# Service
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
-credentials = GoogleCredentials.get_application_default()
-service = build('bigquery', 'v2', credentials=credentials)
+    # Service
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
+    credentials = GoogleCredentials.get_application_default()
+    service = build('bigquery', 'v2', credentials=credentials)
 
-# Table
-project_id = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
-resource = Resource(service, project_id, 'jsontableschema', table_id)
+    # Table
+    project_id = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
+    resource = Resource(service, project_id, 'jsontableschema', table_id)
 
-# Delete
-print('[Delete]')
-print(resource.is_existent)
-if resource.is_existent:
-    resource.delete()
+    # Delete
+    print('[Delete]')
+    print(resource.is_existent)
+    if resource.is_existent:
+        resource.delete()
 
-# Create
-print('[Create]')
-print(resource.is_existent)
-resource.create(import_schema_path)
-print(resource.is_existent)
-print(resource.schema)
+    # Create
+    print('[Create]')
+    print(resource.is_existent)
+    resource.create(import_schema_path)
+    print(resource.is_existent)
+    print(resource.schema)
 
-# Add data
-# print('[Add data]')
-# resource.add_data([('id1', 'name1', True, 333.0)])
-# print(list(resource.get_data()))
+    # Add data
+    # print('[Add data]')
+    # resource.add_data([('id1', 'name1', True, 333.0)])
+    # print(list(resource.get_data()))
 
-# Import data
-print('[Import data]')
-resource.import_data(import_data_path)
-print(list(resource.get_data()))
+    # Import data
+    print('[Import data]')
+    resource.import_data(import_data_path)
+    print(list(resource.get_data()))
 
-# Export schema/data
-print('[Export schema/data]')
-resource.export_schema(export_schema_path)
-resource.export_data(export_data_path)
-print('done')
+    # Export schema/data
+    print('[Export schema/data]')
+    resource.export_schema(export_schema_path)
+    resource.export_data(export_data_path)
+    print('done')
+
+    return locals()
+
+
+if __name__ == '__main__':
+    run()
