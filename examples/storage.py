@@ -12,38 +12,41 @@ from apiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 
 sys.path.insert(0, '.')
-from jtsbq import Table
+import jtsbq
 
 
-def run(dataset_id='jsontableschema',
-        table_id='table_test'):
+def run(dataset='jsontableschema', table='table_test'):
 
     # Service
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
     credentials = GoogleCredentials.get_application_default()
     service = build('bigquery', 'v2', credentials=credentials)
 
-    # Table
-    project_id = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
-    table = Table(service, project_id, dataset_id, table_id)
+    # Storage
+    project = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
+    storage = jtsbq.Storage(service, project, dataset)
 
     # Delete
     print('[Delete]')
-    print(table.is_existent)
-    if table.is_existent:
-        table.delete()
+    print(storage.check(table))
+    if storage.check(table):
+        storage.delete(table)
 
     # Create
     print('[Create]')
-    print(table.is_existent)
-    table.create({'fields': [{'name': 'id', 'type': 'STRING'}]})
-    print(table.is_existent)
-    print(table.schema)
+    print(storage.check(table))
+    storage.create(table, {'fields': [{'name': 'id', 'type': 'string'}]})
+    print(storage.check(table))
+    print(storage.describe(table))
 
     # Add data
     print('[Add data]')
-    table.add_data([('id1',), ('id2',)])
-    print(list(table.get_data()))
+    storage.write(table, [('id1',), ('id2',)])
+    print(list(storage.read(table)))
+
+    # Tables
+    print('[Tables]')
+    print(storage.tables)
 
 
 if __name__ == '__main__':

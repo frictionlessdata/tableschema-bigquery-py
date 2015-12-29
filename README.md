@@ -9,41 +9,29 @@ Generate and load BigQuery tables based on JSON Table Schema descriptors.
 
 This section is intended to be used by end-users of the library.
 
-### Resource and Table
+### Import/Export
 
 > See section below how to get authentificated service.
 
-Resource represents Big Query table wrapped in JSON Table Schema
-converters and validators:
+High-level API is easy to use.
+
+Having `schema.json` (JSONTableSchema) and `data.csv` in
+current directory we can import it to bigquery database:
 
 ```python
-from jtsbq import Resource
+import jtssql
 
-resource = Resource(<service>, 'project_id', 'dataset_id', 'table_id')
-
-resource.create(schema)
-resource.schema
-
-resource.add_data(data)
-resource.get_data()
-
-resource.import_data(path)
-resource.export_schema(path)
-resource.export_data(path)
+storage = jtsbq.Storage(<service>, project, dataset)
+jtsbq.import_resource(storage, 'table', 'schema.json', 'data.csv')
 ```
 
-Table represents native Big Query table:
+Also we can export it from bigquery database:
 
 ```python
-from jtsbq import Table
+import jtsbq
 
-table = Table(<service>, 'project_id', 'dataset_id', 'table_id')
-
-table.create(schema)
-table.schema
-
-table.add_data(data)
-table.get_data()
+storage = jtsbq.Storage(<service>, project, dataset)
+jtsbq.export_resource(storage, 'table', 'schema.json', 'data.csv')
 ```
 
 ### Authentificated service
@@ -67,31 +55,18 @@ service = build('bigquery', 'v2', credentials=credentials)
 
 ### Design Overview
 
-#### Entities
+#### Storage
 
-- Table
+On level between the high-level interface and bigquery driver
+package uses **Tabular Storage** concept:
 
-    Table is a native BigQuery table. Schema and data are used as it is in BigQuery.
-    For example to create a Table user has to pass a BigQuery compatible schema.
-
-- Resource
-
-    Resource is a Table wrapperd in JSONTableSchema converters and validators.
-    That means user interacts with Resource in JSONTableSchema terms. For example
-    to create an underlaying Table user has to pass JSONTableSchema compatible schema.
-    All data are returned after JSONTableSchema conversion.
-
-> Resource is a JSONTableSchema facade to Table (BigQuery) backend.
-
-Table and Resource are geteways by their nature. It means user can initiate
-Table without real BigQuery table creation then call `create` or `delete` to
-delete the real table without instance destruction.
+![Tabular Storage](diagram.png)
 
 #### Mappings
 
 ```
-schema.json -> BigQuery table schema
-data.csv -> BigQuery talbe data
+schema.json -> bigquery table schema
+data.csv -> bigquery talbe data
 ```
 
 #### Drivers
