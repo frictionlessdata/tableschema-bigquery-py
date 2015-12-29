@@ -53,7 +53,9 @@ class Storage(object):
             tables = []
             for table in response.get('tables', []):
                 table = table['tableReference']['tableId']
-                tables.append(table)
+                if table.startswith(self.__prefix):
+                    table = table.replace(self.__prefix, '', 1)
+                    tables.append(table)
 
             # Save to cache
             self.__tables = tables
