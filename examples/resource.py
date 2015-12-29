@@ -35,7 +35,8 @@ def run(import_schema_path='examples/data/spending/schema.json',
     jtsbq.import_resource(
             storage=storage, table=table,
             schema_path=import_schema_path,
-            data_path=import_data_path)
+            data_path=import_data_path,
+            force=True)
     print('imported')
 
     # Export
