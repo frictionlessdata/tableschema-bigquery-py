@@ -7,9 +7,7 @@ from __future__ import unicode_literals
 import io
 import csv
 import time
-from jsontableschema.model import SchemaModel
 from apiclient.http import MediaIoBaseUpload
-from apiclient.errors import HttpError
 
 
 # Module API
@@ -93,7 +91,7 @@ class Storage(object):
         schema = self.__convert_schema(schema)
 
         # Prepare job body
-        name =  self.__prefix + table
+        name = self.__prefix + table
         body = {
             'tableReference': {
                 'projectId': self.__project,
