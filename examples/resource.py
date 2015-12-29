@@ -12,14 +12,14 @@ from apiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 
 sys.path.insert(0, '.')
-from jtsbq import Resource
+import jtsbq
 
 
 def run(import_schema_path='examples/data/spending/schema.json',
         export_schema_path='tmp/schema.json',
         import_data_path='examples/data/spending/data.csv',
         export_data_path='tmp/data.csv',
-        table_id='resource_test'):
+        dataset='jsontableschema', table='resource_tests'):
 
     # Service
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
@@ -27,37 +27,24 @@ def run(import_schema_path='examples/data/spending/schema.json',
     service = build('bigquery', 'v2', credentials=credentials)
 
     # Table
-    project_id = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
-    resource = Resource(service, project_id, 'jsontableschema', table_id)
+    project = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
+    storage = jtsbq.Storage(service, project, dataset)
 
-    # Delete
-    print('[Delete]')
-    print(resource.is_existent)
-    if resource.is_existent:
-        resource.delete()
+    # Import
+    print('[Import]')
+    jtsbq.import_resource(
+            storage=storage, table=table,
+            schema_path=import_schema_path,
+            data_path=import_data_path)
+    print('imported')
 
-    # Create
-    print('[Create]')
-    print(resource.is_existent)
-    resource.create(import_schema_path)
-    print(resource.is_existent)
-    print(resource.schema)
-
-    # Add data
-    # print('[Add data]')
-    # resource.add_data([('id1', 'name1', True, 333.0)])
-    # print(list(resource.get_data()))
-
-    # Import data
-    print('[Import data]')
-    resource.import_data(import_data_path)
-    print(list(resource.get_data()))
-
-    # Export schema/data
-    print('[Export schema/data]')
-    resource.export_schema(export_schema_path)
-    resource.export_data(export_data_path)
-    print('done')
+    # Export
+    print('[Export]')
+    jtsbq.export_resource(
+            storage=storage, table=table,
+            schema_path=export_schema_path,
+            data_path=export_data_path)
+    print('exported')
 
     return locals()
 
