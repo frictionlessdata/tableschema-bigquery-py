@@ -44,7 +44,7 @@ class TestResource(unittest.TestCase):
 
         # Run example
         scope = run(
-            table_id='resource_test_%s' % self.version,
+            table='resource_test_%s' % self.version,
             export_schema_path=self.export_schema_path,
             export_data_path=self.export_data_path)
 
