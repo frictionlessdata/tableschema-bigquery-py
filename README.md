@@ -11,7 +11,7 @@ This section is intended to be used by end-users of the library.
 
 ### Import/Export
 
-> See section below how to get authentificated service.
+> See section below how to get tabular storage object.
 
 High-level API is easy to use.
 
@@ -21,8 +21,7 @@ current directory we can import it to bigquery database:
 ```python
 import jtssql
 
-storage = jtsbq.Storage(<service>, project, dataset)
-jtsbq.import_resource(storage, 'table', 'schema.json', 'data.csv')
+jtsbq.import_resource(<storage>, 'table', 'schema.json', 'data.csv')
 ```
 
 Also we can export it from bigquery database:
@@ -30,27 +29,30 @@ Also we can export it from bigquery database:
 ```python
 import jtsbq
 
-storage = jtsbq.Storage(<service>, project, dataset)
-jtsbq.export_resource(storage, 'table', 'schema.json', 'data.csv')
+jtsbq.export_resource(<storage>, 'table', 'schema.json', 'data.csv')
 ```
 
-### Authentificated service
+### Tabular Storage
 
 To start using Google BigQuery service:
 - Create a new project - [link](https://console.developers.google.com/home/dashboard)
 - Create a service key - [link](https://console.developers.google.com/apis/credentials)
 - Download json credentials and set `GOOGLE_APPLICATION_CREDENTIALS` environment variable
 
-For example:
+We can get storage this way:
 
 ```python
+import io
 import os
+import json
 from apiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
 credentials = GoogleCredentials.get_application_default()
 service = build('bigquery', 'v2', credentials=credentials)
+project = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
+storage = jtsbq.Storage(service, project, 'dataset')
 ```
 
 ### Design Overview
