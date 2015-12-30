@@ -19,7 +19,9 @@ def run(import_schema='examples/data/spending/schema.json',
         export_schema='tmp/schema.json',
         import_data='examples/data/spending/data.csv',
         export_data='tmp/data.csv',
-        dataset='jsontableschema', table='resource_tests'):
+        dataset='jsontableschema',
+        prefix='test_',
+        table='resource_tests'):
 
     # Service
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
@@ -28,12 +30,13 @@ def run(import_schema='examples/data/spending/schema.json',
 
     # Table
     project = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
-    storage = jtsbq.Storage(service, project, dataset)
+    storage = jtsbq.Storage(service, project, dataset, prefix=prefix)
 
     # Import
     print('[Import]')
     jtsbq.import_resource(
-            storage=storage, table=table,
+            storage=storage,
+            table=table,
             schema=import_schema,
             data=import_data,
             force=True)
@@ -42,7 +45,8 @@ def run(import_schema='examples/data/spending/schema.json',
     # Export
     print('[Export]')
     jtsbq.export_resource(
-            storage=storage, table=table,
+            storage=storage,
+            table=table,
             schema=export_schema,
             data=export_data)
     print('exported')
