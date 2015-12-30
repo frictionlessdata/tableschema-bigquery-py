@@ -2,7 +2,7 @@
 
   "name": "jtsbq",
   "description": "Generate BigQuery tables, load and extract data, based on JSON Table Schema descriptors.",
-  "version": "0.1.0-alpha",
+  "version": "0.1.0",
   "slug": "jtsbq",
   "author": "Open Knowledge Foundation",
   "author_email": "info@okfn.org",
