@@ -15,10 +15,10 @@ sys.path.insert(0, '.')
 import jtsbq
 
 
-def run(import_schema_path='examples/data/spending/schema.json',
-        export_schema_path='tmp/schema.json',
-        import_data_path='examples/data/spending/data.csv',
-        export_data_path='tmp/data.csv',
+def run(import_schema='examples/data/spending/schema.json',
+        export_schema='tmp/schema.json',
+        import_data='examples/data/spending/data.csv',
+        export_data='tmp/data.csv',
         dataset='jsontableschema', table='resource_tests'):
 
     # Service
@@ -34,8 +34,8 @@ def run(import_schema_path='examples/data/spending/schema.json',
     print('[Import]')
     jtsbq.import_resource(
             storage=storage, table=table,
-            schema_path=import_schema_path,
-            data_path=import_data_path,
+            schema=import_schema,
+            data=import_data,
             force=True)
     print('imported')
 
@@ -43,8 +43,8 @@ def run(import_schema_path='examples/data/spending/schema.json',
     print('[Export]')
     jtsbq.export_resource(
             storage=storage, table=table,
-            schema_path=export_schema_path,
-            data_path=export_data_path)
+            schema=export_schema,
+            data=export_data)
     print('exported')
 
     return locals()
