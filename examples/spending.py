@@ -13,8 +13,8 @@ from examples.base import run
 
 # Fixtures
 dataset = 'jsontableschema'
-prefix = 'test_'
-table = 'test_%s_%s' % (sys.version_info.major, sys.version_info.minor)
+prefix = 'test_%s_%s_' % (sys.version_info.major, sys.version_info.minor)
+table = 'data'
 schema = {
     'fields': [
         {
