@@ -9,14 +9,13 @@ import os
 import csv
 import six
 import json
-from tabulator import topen, processors
+from tabulator import topen
 from jsontableschema.model import SchemaModel
 
 
 # Module API
 
-# TODO: add support to data is list?
-def import_resource(storage, table, schema, data, force=False):
+def import_resource(storage, table, schema, data):
     """Import JSONTableSchema resource to storage's table.
 
     Parameters
@@ -25,31 +24,22 @@ def import_resource(storage, table, schema, data, force=False):
         Storage object.
     table: str
         Table name.
-    schema: dict/str
-        jSONTableSchema dict or path to schema file.
+    schema: str
+        Path to schema file.
     data: str
         Path to data file.
-    force: bool
-        Force table rewriting If it already exists.
 
     """
 
-    # Get schema
-    if isinstance(schema, six.string_types):
-        with io.open(schema, encoding='utf-8') as file:
-            schema = json.load(file)
-
     # Create table
+    model = SchemaModel(schema)
+    schema = model.as_python
     if storage.check(table):
-        if not force:
-            message = 'Table %s is already existent' % table
-            raise RuntimeError(message)
         storage.delete(table)
     storage.create(table, schema)
 
-    # Write data to table
+    # Write data
     with topen(data, with_headers=True) as data:
-        data.add_processor(processors.Schema(schema))
         storage.write(table, data)
 
 
@@ -62,26 +52,22 @@ def export_resource(storage, table, schema, data):
         Storage object.
     table: str
         Table name.
-    schema: dict/str
-        Dict to store schema or path to schema file.
+    schema: str
+        Path to schema file.
     data: str
         Path to data file.
 
     """
 
-    # Update schema dict
-    if not isinstance(schema, six.string_types):
-        schema.update(storage.describe(table))
-    # Write schema on disk
-    else:
-        _ensure_dir(schema)
-        with io.open(schema,
-                     mode=_write_mode,
-                     encoding=_write_encoding) as file:
-            schema = storage.describe(table)
-            json.dump(schema, file, indent=4)
+    # Save schema
+    _ensure_dir(schema)
+    with io.open(schema,
+                 mode=_write_mode,
+                 encoding=_write_encoding) as file:
+        schema = storage.describe(table)
+        json.dump(schema, file, indent=4)
 
-    # Write data on disk
+    # Save data
     _ensure_dir(data)
     with io.open(data,
                  mode=_write_mode,

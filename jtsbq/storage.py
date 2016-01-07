@@ -6,13 +6,29 @@ from __future__ import unicode_literals
 
 import io
 import csv
+import six
 import time
+from jsontableschema.model import SchemaModel
 from apiclient.http import MediaIoBaseUpload
 
 
 # Module API
 
 class Storage(object):
+    """BigQuery Tabular Storage.
+
+    Parameters
+    ----------
+    service: object
+        Service object from API.
+    project: str
+        Project name.
+    dataset: str
+        Dataset name.
+    prefix: str
+        Prefix for all tables.
+
+    """
 
     # Public
 
@@ -38,7 +54,7 @@ class Storage(object):
 
     @property
     def tables(self):
-        """List of table names.
+        """Return list of storage's table names.
         """
 
         # No cached value
@@ -53,8 +69,8 @@ class Storage(object):
             tables = []
             for table in response.get('tables', []):
                 table = table['tableReference']['tableId']
-                if table.startswith(self.__prefix):
-                    table = table.replace(self.__prefix, '', 1)
+                table = _restore_table(table, self.__prefix)
+                if table is not None:
                     tables.append(table)
 
             # Save to cache
@@ -63,51 +79,64 @@ class Storage(object):
         return self.__tables
 
     def check(self, table):
-        """Return true if table exists.
+        """Return if table exists.
         """
-        return table in self.tables
+
+        # Check existence
+        existence = table in self.tables
+
+        return existence
 
     def create(self, table, schema):
         """Create table by schema.
 
         Parameters
         ----------
-        table: str
-            Table name.
-        schema: dict
-            BigQuery schema descriptor.
+        table: str/list
+            Table name or list of table names.
+        schema: dict/list
+            JSONTableSchema schema or list of schemas.
 
         Raises
         ------
         RuntimeError
-            If table is already existent.
+            If table already exists.
 
         """
 
-        # Check not existent
-        if self.check(table):
-            message = 'Table "%s" is already existent.' % table
-            raise RuntimeError(message)
+        # Make lists
+        tables = table
+        if isinstance(table, six.string_types):
+            tables = [table]
+        schemas = schema
+        if isinstance(schema, dict):
+            schemas = [schema]
 
-        # Convert jts schema
-        schema = self.__convert_schema(schema)
+        # Iterate over tables/schemas
+        for table, schema in zip(tables, schemas):
 
-        # Prepare job body
-        name = self.__prefix + table
-        body = {
-            'tableReference': {
-                'projectId': self.__project,
-                'datasetId': self.__dataset,
-                'tableId': name,
-            },
-            'schema': schema,
-        }
+            # Check not existent
+            if self.check(table):
+                message = 'Table "%s" already exists' % table
+                raise RuntimeError(message)
 
-        # Make request
-        self.__service.tables().insert(
-                projectId=self.__project,
-                datasetId=self.__dataset,
-                body=body).execute()
+            # Prepare job body
+            schema = _convert_schema(schema)
+            table = _convert_table(table, self.__prefix)
+            body = {
+                'tableReference': {
+                    'projectId': self.__project,
+                    'datasetId': self.__dataset,
+                    'tableId': table,
+                },
+                'schema': schema,
+            }
+
+            # Make request
+            self.__service.tables().insert(
+                    projectId=self.__project,
+                    datasetId=self.__dataset,
+                    body=body).execute()
 
         # Remove tables cache
         self.__tables = None
@@ -115,59 +144,114 @@ class Storage(object):
     def delete(self, table):
         """Delete table.
 
+        Parameters
+        ----------
+        table: str/list
+            Table name or list of table names.
+
         Raises
         ------
         RuntimeError
-            If table is not existent.
+            If table doesn't exist.
 
         """
 
-        # Check existent
-        if not self.check(table):
-            message = 'Table "%s" is not existent.' % self
-            raise RuntimeError(message)
+        # Make lists
+        tables = table
+        if isinstance(table, six.string_types):
+            tables = [table]
 
-        # Make request
-        name = self.__prefix + table
-        self.__service.tables().delete(
-                projectId=self.__project,
-                datasetId=self.__dataset,
-                tableId=name).execute()
+        # Iterater over tables
+        for table in tables:
+
+            # Check existent
+            if not self.check(table):
+                message = 'Table "%s" doesn\'t exist.' % self
+                raise RuntimeError(message)
+
+            # Make delete request
+            table = _convert_table(table, self.__prefix)
+            self.__service.tables().delete(
+                    projectId=self.__project,
+                    datasetId=self.__dataset,
+                    tableId=table).execute()
 
         # Remove tables cache
         self.__tables = None
 
     def describe(self, table):
+        """Return table's JSONTableSchema schema.
+
+        Parameters
+        ----------
+        table: str
+            Table name.
+
+        Returns
+        -------
+        dict
+            JSONTableSchema schema.
+
+        """
 
         # Get response
-        name = self.__prefix + table
+        table = _convert_table(table, self.__prefix)
         response = self.__service.tables().get(
                 projectId=self.__project,
                 datasetId=self.__dataset,
-                tableId=name).execute()
+                tableId=table).execute()
 
         # Get schema
         schema = response['schema']
-        schema = self.__restore_schema(schema)
+        schema = _restore_schema(schema)
 
         return schema
 
     def read(self, table):
+        """Read data from table.
+
+        Parameters
+        ----------
+        table: str
+            Table name.
+
+        Returns
+        -------
+        generator
+            Data tuples generator.
+
+        """
 
         # Get response
-        name = self.__prefix + table
+        schema = self.describe(table)
+        model = SchemaModel(schema)
+        table = _convert_table(table, self.__prefix)
         response = self.__service.tabledata().list(
                 projectId=self.__project,
                 datasetId=self.__dataset,
-                tableId=name).execute()
+                tableId=table).execute()
 
-        # Yield rows
+        # Yield data
         for row in response['rows']:
-            yield tuple(field['v'] for field in row['f'])
+            row = tuple(field['v'] for field in row['f'])
+            row = tuple(model.convert_row(*row))
+            yield row
 
     def write(self, table, data):
+        """Write data to table.
 
-        # Convert data to byte stream csv
+        Parameters
+        ----------
+        table: str
+            Table name.
+        data: list
+            List of data tuples.
+
+        """
+
+        # Process data to byte stream csv
+        schema = self.describe(table)
+        model = SchemaModel(schema)
         bytes = io.BufferedRandom(io.BytesIO())
         class Stream: #noqa
             def write(self, string):
@@ -175,18 +259,19 @@ class Storage(object):
         stream = Stream()
         writer = csv.writer(stream)
         for row in data:
+            row = tuple(model.convert_row(*row))
             writer.writerow(row)
         bytes.seek(0)
 
         # Prepare job body
-        name = self.__prefix + table
+        table = _convert_table(table, self.__prefix)
         body = {
             'configuration': {
                 'load': {
                     'destinationTable': {
                         'projectId': self.__project,
                         'datasetId': self.__dataset,
-                        'tableId': name
+                        'tableId': table
                     },
                     'sourceFormat': 'CSV',
                 }
@@ -206,62 +291,6 @@ class Storage(object):
 
     # Private
 
-    def __convert_schema(self, schema):
-        """Convert JSONTableSchema schema to SQLAlchemy columns.
-        """
-
-        # Mapping
-        mapping = {
-            'string': 'STRING',
-            'integer': 'INTEGER',
-            'number': 'FLOAT',
-            'boolean': 'BOOLEAN',
-            'datetime': 'TIMESTAMP',
-        }
-
-        fields = []
-        for field in schema['fields']:
-            try:
-                ftype = mapping[field['type']]
-            except KeyError:
-                message = 'Type %s is not supported' % field['type']
-                raise TypeError(message)
-            fields.append({
-                'name': field['name'],
-                'type': ftype,
-            })
-        schema = {'fields': fields}
-
-        return schema
-
-    def __restore_schema(self, schema):
-        """Convert SQLAlchemy table reflection to JSONTableSchema schema.
-        """
-
-        # Mapping
-        mapping = {
-            'STRING': 'string',
-            'INTEGER': 'integer',
-            'FLOAT': 'number',
-            'BOOLEAN': 'boolean',
-            'TIMESTAMP': 'datetime',
-        }
-
-        fields = []
-        for field in schema['fields']:
-            try:
-                ftype = mapping[field['type']]
-            except KeyError:
-                message = 'Type %s is not supported' % field['type']
-                raise TypeError(message)
-            fields.append({
-                'name': field['name'],
-                'type': ftype,
-            })
-        schema = {'fields': fields}
-
-        return schema
-
     def __wait_response(self, response):
 
         # Get job instance
@@ -279,3 +308,79 @@ class Storage(object):
                     raise RuntimeError(message)
                 break
             time.sleep(1)
+
+
+# Internal
+
+def _convert_table(table, prefix):
+    """Convert high-level table name to database name.
+    """
+    return prefix + table
+
+
+def _restore_table(table, prefix):
+    """Restore database table name to high-level name.
+    """
+    if table.startswith(prefix):
+        return table.replace(prefix, '', 1)
+    return None
+
+
+def _convert_schema(schema):
+    """Convert JSONTableSchema schema to BigQuery schema.
+    """
+
+    # Mapping
+    mapping = {
+        'string': 'STRING',
+        'integer': 'INTEGER',
+        'number': 'FLOAT',
+        'boolean': 'BOOLEAN',
+        'datetime': 'TIMESTAMP',
+    }
+
+    # Schema
+    fields = []
+    for field in schema['fields']:
+        try:
+            ftype = mapping[field['type']]
+        except KeyError:
+            message = 'Type %s is not supported' % field['type']
+            raise TypeError(message)
+        fields.append({
+            'name': field['name'],
+            'type': ftype,
+        })
+    schema = {'fields': fields}
+
+    return schema
+
+
+def _restore_schema(schema):
+    """Convert BigQuery schema to JSONTableSchema schema.
+    """
+
+    # Mapping
+    mapping = {
+        'STRING': 'string',
+        'INTEGER': 'integer',
+        'FLOAT': 'number',
+        'BOOLEAN': 'boolean',
+        'TIMESTAMP': 'datetime',
+    }
+
+    # Schema
+    fields = []
+    for field in schema['fields']:
+        try:
+            ftype = mapping[field['type']]
+        except KeyError:
+            message = 'Type %s is not supported' % field['type']
+            raise TypeError(message)
+        fields.append({
+            'name': field['name'],
+            'type': ftype,
+        })
+    schema = {'fields': fields}
+
+    return schema

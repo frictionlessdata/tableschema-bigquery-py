@@ -11,7 +11,7 @@ from importlib import import_module
 module = import_module('jtsbq.storage')
 
 
-class TestTable(unittest.TestCase):
+class TestStorage(unittest.TestCase):
 
     # Helpers
 
