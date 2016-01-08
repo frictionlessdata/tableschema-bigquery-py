@@ -347,10 +347,15 @@ def _convert_schema(schema):
         except KeyError:
             message = 'Type %s is not supported' % field['type']
             raise TypeError(message)
-        fields.append({
+        mode = 'NULLABLE'
+        if field.get('constraints', {}).get('required', True):
+            mode = 'REQUIRED'
+        resfield = {
             'name': field['name'],
             'type': ftype,
-        })
+            'mode': mode,
+        }
+        fields.append(resfield)
     schema = {'fields': fields}
 
     return schema
@@ -377,10 +382,13 @@ def _restore_schema(schema):
         except KeyError:
             message = 'Type %s is not supported' % field['type']
             raise TypeError(message)
-        fields.append({
+        resfield = {
             'name': field['name'],
             'type': ftype,
-        })
+        }
+        if field.get('mode', 'NULLABLE') == 'NULLABLE':
+            resfield['constraints'] = {'required': False}
+        fields.append(resfield)
     schema = {'fields': fields}
 
     return schema
