@@ -234,7 +234,7 @@ class Storage(object):
         # Yield data
         for row in response['rows']:
             row = tuple(field['v'] for field in row['f'])
-            row = tuple(model.convert_row(*row))
+            row = tuple(model.convert_row(*row, fail_fast=True))
             yield row
 
     def write(self, table, data):
@@ -259,7 +259,7 @@ class Storage(object):
         stream = Stream()
         writer = csv.writer(stream)
         for row in data:
-            row = tuple(model.convert_row(*row))
+            row = tuple(model.convert_row(*row, fail_fast=True))
             writer.writerow(row)
         bytes.seek(0)
 
