@@ -6,8 +6,10 @@ from __future__ import unicode_literals
 
 import io
 import csv
+import re
 import six
 import time
+from slugify import slugify
 from jsontableschema.model import SchemaModel
 from apiclient.http import MediaIoBaseUpload
 
@@ -351,7 +353,7 @@ def _convert_schema(schema):
         if field.get('constraints', {}).get('required', True):
             mode = 'REQUIRED'
         resfield = {
-            'name': field['name'],
+            'name': _convert_field_name(field['name']),
             'type': ftype,
             'mode': mode,
         }
@@ -392,3 +394,17 @@ def _restore_schema(schema):
     schema = {'fields': fields}
 
     return schema
+
+
+def _convert_field_name(name):
+    # Check https://cloud.google.com/bigquery/docs/reference/v2/tables for
+    # reference
+    MAX_LENGTH = 128
+    VALID_NAME = '^[a-zA-Z_]\w{0,%d}$' % (MAX_LENGTH-1)
+
+    if not re.match(VALID_NAME, name):
+        name = slugify(name, separator='_')
+        if not re.match('^[a-zA-Z_]', name):
+            name = '_' + name
+
+    return name[:MAX_LENGTH]
