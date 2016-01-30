@@ -6,13 +6,13 @@ from __future__ import unicode_literals
 
 import io
 import csv
-import re
 import six
 import time
 import jsontableschema
-from slugify import slugify
 from jsontableschema.model import SchemaModel
 from apiclient.http import MediaIoBaseUpload
+
+from . import helpers
 
 
 # Module API
@@ -72,7 +72,7 @@ class Storage(object):
             tables = []
             for table in response.get('tables', []):
                 table = table['tableReference']['tableId']
-                table = _restore_table(table, self.__prefix)
+                table = helpers.restore_table(table, self.__prefix)
                 if table is not None:
                     tables.append(table)
 
@@ -127,8 +127,8 @@ class Storage(object):
             jsontableschema.validate(schema)
 
             # Prepare job body
-            schema = _convert_schema(schema)
-            table = _convert_table(table, self.__prefix)
+            schema = helpers.convert_schema(schema)
+            table = helpers.convert_table(table, self.__prefix)
             body = {
                 'tableReference': {
                     'projectId': self.__project,
@@ -176,7 +176,7 @@ class Storage(object):
                 raise RuntimeError(message)
 
             # Make delete request
-            table = _convert_table(table, self.__prefix)
+            table = helpers.convert_table(table, self.__prefix)
             self.__service.tables().delete(
                     projectId=self.__project,
                     datasetId=self.__dataset,
@@ -201,7 +201,7 @@ class Storage(object):
         """
 
         # Get response
-        table = _convert_table(table, self.__prefix)
+        table = helpers.convert_table(table, self.__prefix)
         response = self.__service.tables().get(
                 projectId=self.__project,
                 datasetId=self.__dataset,
@@ -209,7 +209,7 @@ class Storage(object):
 
         # Get schema
         schema = response['schema']
-        schema = _restore_schema(schema)
+        schema = helpers.restore_schema(schema)
 
         return schema
 
@@ -231,7 +231,7 @@ class Storage(object):
         # Get response
         schema = self.describe(table)
         model = SchemaModel(schema)
-        table = _convert_table(table, self.__prefix)
+        table = helpers.convert_table(table, self.__prefix)
         response = self.__service.tabledata().list(
                 projectId=self.__project,
                 datasetId=self.__dataset,
@@ -270,7 +270,7 @@ class Storage(object):
         bytes.seek(0)
 
         # Prepare job body
-        table = _convert_table(table, self.__prefix)
+        table = helpers.convert_table(table, self.__prefix)
         body = {
             'configuration': {
                 'load': {
@@ -314,101 +314,3 @@ class Storage(object):
                     raise RuntimeError(message)
                 break
             time.sleep(1)
-
-
-# Internal
-
-def _convert_table(table, prefix):
-    """Convert high-level table name to database name.
-    """
-    return prefix + table
-
-
-def _restore_table(table, prefix):
-    """Restore database table name to high-level name.
-    """
-    if table.startswith(prefix):
-        return table.replace(prefix, '', 1)
-    return None
-
-
-def _convert_schema(schema):
-    """Convert JSONTableSchema schema to BigQuery schema.
-    """
-
-    # Mapping
-    mapping = {
-        'string': 'STRING',
-        'integer': 'INTEGER',
-        'number': 'FLOAT',
-        'boolean': 'BOOLEAN',
-        'datetime': 'TIMESTAMP',
-    }
-
-    # Schema
-    fields = []
-    for field in schema['fields']:
-        try:
-            ftype = mapping[field['type']]
-        except KeyError:
-            message = 'Type %s is not supported' % field['type']
-            raise TypeError(message)
-        mode = 'NULLABLE'
-        if field.get('constraints', {}).get('required', True):
-            mode = 'REQUIRED'
-        resfield = {
-            'name': _convert_field_name(field['name']),
-            'type': ftype,
-            'mode': mode,
-        }
-        fields.append(resfield)
-    schema = {'fields': fields}
-
-    return schema
-
-
-def _restore_schema(schema):
-    """Convert BigQuery schema to JSONTableSchema schema.
-    """
-
-    # Mapping
-    mapping = {
-        'STRING': 'string',
-        'INTEGER': 'integer',
-        'FLOAT': 'number',
-        'BOOLEAN': 'boolean',
-        'TIMESTAMP': 'datetime',
-    }
-
-    # Schema
-    fields = []
-    for field in schema['fields']:
-        try:
-            ftype = mapping[field['type']]
-        except KeyError:
-            message = 'Type %s is not supported' % field['type']
-            raise TypeError(message)
-        resfield = {
-            'name': field['name'],
-            'type': ftype,
-        }
-        if field.get('mode', 'NULLABLE') == 'NULLABLE':
-            resfield['constraints'] = {'required': False}
-        fields.append(resfield)
-    schema = {'fields': fields}
-
-    return schema
-
-
-def _convert_field_name(name):
-    # Check https://cloud.google.com/bigquery/docs/reference/v2/tables for
-    # reference
-    MAX_LENGTH = 128
-    VALID_NAME = '^[a-zA-Z_]\w{0,%d}$' % (MAX_LENGTH-1)
-
-    if not re.match(VALID_NAME, name):
-        name = slugify(name, separator='_')
-        if not re.match('^[a-zA-Z_]', name):
-            name = '_' + name
-
-    return name[:MAX_LENGTH]
