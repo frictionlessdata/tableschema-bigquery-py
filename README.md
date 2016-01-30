@@ -5,11 +5,7 @@
 
 Generate and load BigQuery tables based on JSON Table Schema descriptors.
 
-## Usage
-
-This section is intended to be used by end-users of the library.
-
-### Import/Export
+## Import/Export
 
 > See section below how to get tabular storage object.
 
@@ -32,7 +28,7 @@ import jtsbq
 jtsbq.export_resource(<storage>, 'table', 'schema.json', 'data.csv')
 ```
 
-### Tabular Storage
+## Tabular Storage
 
 To start using Google BigQuery service:
 - Create a new project - [link](https://console.developers.google.com/home/dashboard)
@@ -55,65 +51,19 @@ project = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id'
 storage = jtsbq.Storage(service, project, 'dataset')
 ```
 
-### Design Overview
-
-#### Storage
-
-On level between the high-level interface and bigquery driver
-package uses **Tabular Storage** concept:
-
-![Tabular Storage](diagram.png)
-
-#### Mappings
+## Mappings
 
 ```
 schema.json -> bigquery table schema
 data.csv -> bigquery talbe data
 ```
 
-#### Drivers
+## Drivers
 
 Default Google BigQuery client is used - [docs](https://developers.google.com/resources/api-libraries/documentation/bigquery/v2/python/latest/).
 
-### Documentation
+## Documentation
 
 API documentation is presented as docstings:
 - [Resource](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jtsbq/resource.py)
 - [Table](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jtsbq/table.py)
-
-## Development
-
-This section is intended to be used by tech users collaborating
-on this project.
-
-### Getting Started
-
-To activate virtual environment, install
-dependencies, add pre-commit hook to review and test code
-and get `run` command as unified developer interface:
-
-```
-$ source activate.sh
-```
-
-### Reviewing
-
-The project follow the next style guides:
-- [Open Knowledge Coding Standards and Style Guide](https://github.com/okfn/coding-standards)
-- [PEP 8 - Style Guide for Python Code](https://www.python.org/dev/peps/pep-0008/)
-
-To check the project against Python style guide:
-
-```
-$ run review
-```
-
-### Testing
-
-To run tests with coverage check:
-
-```
-$ run test
-```
-
-Coverage data will be in the `.coverage` file.
