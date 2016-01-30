@@ -25,11 +25,9 @@
   ],
 
   "scripts": {
-    "check": "python run.py review && python run.py test",
     "install": "pip install --upgrade -r requirements.dev.txt",
     "report": "coveralls",
-    "review": "pylama jtsbq",
-    "test": "PACKAGE=jtsbq tox"
+    "test": "pylama jtsbq && PACKAGE=jtsbq tox"
   }
 
 }
