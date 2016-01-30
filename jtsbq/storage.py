@@ -9,6 +9,7 @@ import csv
 import re
 import six
 import time
+import jsontableschema
 from slugify import slugify
 from jsontableschema.model import SchemaModel
 from apiclient.http import MediaIoBaseUpload
@@ -121,6 +122,9 @@ class Storage(object):
             if self.check(table):
                 message = 'Table "%s" already exists' % table
                 raise RuntimeError(message)
+
+            # Validate schema
+            jsontableschema.validate(schema)
 
             # Prepare job body
             schema = _convert_schema(schema)
