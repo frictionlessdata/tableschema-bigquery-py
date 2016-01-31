@@ -1,5 +1,5 @@
 six
+python-slugify
 jsontableschema
 google-api-python-client
-python-slugify
 git+git://github.com/okfn/tabulator-py.git

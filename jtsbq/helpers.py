@@ -46,7 +46,7 @@ def convert_schema(schema):
             message = 'Type %s is not supported' % field['type']
             raise TypeError(message)
         mode = 'NULLABLE'
-        if field.get('constraints', {}).get('required', True):
+        if field.get('constraints', {}).get('required', False):
             mode = 'REQUIRED'
         resfield = {
             'name': convert_field_name(field['name']),
@@ -84,8 +84,8 @@ def restore_schema(schema):
             'name': field['name'],
             'type': ftype,
         }
-        if field.get('mode', 'NULLABLE') == 'NULLABLE':
-            resfield['constraints'] = {'required': False}
+        if field.get('mode', 'NULLABLE') != 'NULLABLE':
+            resfield['constraints'] = {'required': True}
         fields.append(resfield)
     schema = {'fields': fields}
 
