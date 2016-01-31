@@ -5,30 +5,9 @@
 
 Generate and load BigQuery tables based on JSON Table Schema descriptors.
 
-## Import/Export
-
-> See section below how to get tabular storage object.
-
-High-level API is easy to use.
-
-Having `schema.json` (JSONTableSchema) and `data.csv` in
-current directory we can import it to bigquery database:
-
-```python
-import jtssql
-
-jtsbq.import_resource(<storage>, 'table', 'schema.json', 'data.csv')
-```
-
-Also we can export it from bigquery database:
-
-```python
-import jtsbq
-
-jtsbq.export_resource(<storage>, 'table', 'schema.json', 'data.csv')
-```
-
 ## Tabular Storage
+
+Package implements [Tabular Storage](https://github.com/okfn/datapackage-storage-py#tabular-storage) interface.
 
 To start using Google BigQuery service:
 - Create a new project - [link](https://console.developers.google.com/home/dashboard)
@@ -48,7 +27,19 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
 credentials = GoogleCredentials.get_application_default()
 service = build('bigquery', 'v2', credentials=credentials)
 project = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
-storage = jtsbq.Storage(service, project, 'dataset')
+storage = jtsbq.Storage(service, project, 'dataset', prefix='prefix')
+```
+
+Then we could interact with storage:
+
+```python
+storage.tables
+storage.check('table_name') # check existence
+storage.create('table_name', shema)
+storage.delete('table_name')
+storage.describe('table_name') # return schema
+storage.read('table_name') # return data
+storage.write('table_name', data)
 ```
 
 ## Mappings
@@ -65,5 +56,4 @@ Default Google BigQuery client is used - [docs](https://developers.google.com/re
 ## Documentation
 
 API documentation is presented as docstings:
-- [Resource](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jtsbq/resource.py)
-- [Table](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jtsbq/table.py)
+- [Storage](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jtsbq/storage.py)
