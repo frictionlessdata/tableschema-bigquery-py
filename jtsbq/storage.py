@@ -5,10 +5,10 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import io
-import csv
 import six
 import time
 import jsontableschema
+import unicodecsv as csv
 from jsontableschema.model import SchemaModel
 from apiclient.http import MediaIoBaseUpload
 
@@ -259,11 +259,7 @@ class Storage(object):
         schema = self.describe(table)
         model = SchemaModel(schema)
         bytes = io.BufferedRandom(io.BytesIO())
-        class Stream: #noqa
-            def write(self, string):
-                bytes.write(string.encode('utf-8'))
-        stream = Stream()
-        writer = csv.writer(stream)
+        writer = csv.writer(bytes, encoding='utf-8')
         for row in data:
             row = tuple(model.convert_row(*row, fail_fast=True))
             writer.writerow(row)
