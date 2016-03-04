@@ -57,3 +57,11 @@ Default Google BigQuery client is used - [docs](https://developers.google.com/re
 
 API documentation is presented as docstings:
 - [Storage](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jtsbq/storage.py)
+
+## Contributing
+
+Please read the contribution guideline:
+
+[How to Contribute](CONTRIBUTING.md)
+
+Thanks!
