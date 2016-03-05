@@ -36,7 +36,7 @@ Then we could interact with storage:
 ```python
 storage.tables
 storage.check('table_name') # check existence
-storage.create('table_name', shema)
+storage.create('table_name', schema)
 storage.delete('table_name')
 storage.describe('table_name') # return schema
 storage.read('table_name') # return data
