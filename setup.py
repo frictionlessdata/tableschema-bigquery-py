@@ -18,7 +18,7 @@ def read(*paths):
 
 
 # Prepare
-PACKAGE = 'jtsbq'
+PACKAGE = 'jsontableschema_bigquery'
 INSTALL_REQUIRES = [
     'six>=1.9',
     'unicodecsv',

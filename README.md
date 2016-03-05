@@ -22,12 +22,13 @@ import os
 import json
 from apiclient.discovery import build
 from oauth2client.client import GoogleCredentials
+from jsontableschema_bigquery import Storage
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
 credentials = GoogleCredentials.get_application_default()
 service = build('bigquery', 'v2', credentials=credentials)
 project = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
-storage = jtsbq.Storage(service, project, 'dataset', prefix='prefix')
+storage = Storage(service, project, 'dataset', prefix='prefix')
 ```
 
 Then we could interact with storage:
@@ -56,7 +57,7 @@ Default Google BigQuery client is used - [docs](https://developers.google.com/re
 ## Documentation
 
 API documentation is presented as docstings:
-- [Storage](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jtsbq/storage.py)
+- [Storage](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jsontableschema_bigquery/storage.py)
 
 ## Contributing
 

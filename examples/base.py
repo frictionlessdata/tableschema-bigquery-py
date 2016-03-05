@@ -12,7 +12,7 @@ from apiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 
 sys.path.insert(0, '.')
-import jtsbq
+from jsontableschema_bigquery import Storage
 
 
 def run(dataset, prefix, table, schema, data):
@@ -22,7 +22,7 @@ def run(dataset, prefix, table, schema, data):
     credentials = GoogleCredentials.get_application_default()
     service = build('bigquery', 'v2', credentials=credentials)
     project = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
-    storage = jtsbq.Storage(service, project, dataset, prefix=prefix)
+    storage = Storage(service, project, dataset, prefix=prefix)
 
     # Check table
     if storage.check(table):

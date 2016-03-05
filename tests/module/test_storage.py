@@ -8,7 +8,7 @@ import pytest
 import unittest
 from mock import MagicMock, patch, ANY
 from importlib import import_module
-module = import_module('jtsbq.storage')
+module = import_module('jsontableschema_bigquery.storage')
 
 
 class TestStorage(unittest.TestCase):
