@@ -1,8 +1,9 @@
 # jsontableschema-bigquery-py
 
+[![Travis](https://img.shields.io/travis/frictionlessdata/jsontableschema-bigquery-py.svg)](https://travis-ci.org/frictionlessdata/jsontableschema-bigquery-py)
+[![Coveralls](http://img.shields.io/coveralls/frictionlessdata/jsontableschema-bigquery-py.svg?branch=master)](https://coveralls.io/r/frictionlessdata/jsontableschema-bigquery-py?branch=master)
+[![PyPi](https://img.shields.io/pypi/v/jsontableschema-bigquery.svg)](https://pypi.python.org/pypi/jsontableschema-bigquery)
 [![Gitter](https://img.shields.io/gitter/room/frictionlessdata/chat.svg)](https://gitter.im/frictionlessdata/chat)
-[![Travis](https://img.shields.io/travis/okfn/jsontableschema-bigquery-py.svg)](https://travis-ci.org/okfn/jsontableschema-bigquery-py)
-[![Coveralls](http://img.shields.io/coveralls/okfn/jsontableschema-bigquery-py.svg?branch=master)](https://coveralls.io/r/okfn/jsontableschema-bigquery-py?branch=master)
 
 Generate and load BigQuery tables based on JSON Table Schema descriptors.
 
@@ -58,7 +59,7 @@ Default Google BigQuery client is used - [docs](https://developers.google.com/re
 ## Documentation
 
 API documentation is presented as docstings:
-- [Storage](https://github.com/okfn/jsontableschema-bigquery-py/blob/master/jsontableschema_bigquery/storage.py)
+- [Storage](https://github.com/frictionlessdata/jsontableschema-bigquery-py/blob/master/jsontableschema_bigquery/storage.py)
 
 ## Contributing
 
