@@ -53,7 +53,7 @@ setup(
     description='Generate BigQuery tables, load and extract data, based on JSON Table Schema descriptors.',
     author='Open Knowledge Foundation',
     author_email='info@okfn.org',
-    url='https://github.com/okfn/jsontableschema-bigquery-py',
+    url='https://github.com/frictionlessdata/jsontableschema-bigquery-py',
     license='MIT',
     keywords=[
         'frictionless data',
