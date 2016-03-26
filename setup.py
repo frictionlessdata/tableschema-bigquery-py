@@ -19,6 +19,7 @@ def read(*paths):
 
 # Prepare
 PACKAGE = 'jsontableschema_bigquery'
+NAME = PACKAGE.replace('_', '-')
 INSTALL_REQUIRES = [
     'six>=1.9',
     'unicodecsv',
@@ -40,7 +41,7 @@ PACKAGES = find_packages(exclude=['examples', 'tests'])
 
 # Run
 setup(
-    name=PACKAGE,
+    name=NAME,
     version=VERSION,
     packages=PACKAGES,
     include_package_data=True,
