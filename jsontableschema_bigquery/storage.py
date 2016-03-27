@@ -12,7 +12,7 @@ import unicodecsv as csv
 from jsontableschema.model import SchemaModel
 from apiclient.http import MediaIoBaseUpload
 
-from . import helpers
+from . import mappers
 
 
 # Module API
@@ -72,7 +72,7 @@ class Storage(object):
             tables = []
             for table in response.get('tables', []):
                 table = table['tableReference']['tableId']
-                table = helpers.restore_table(table, self.__prefix)
+                table = mappers.restore_table(table, self.__prefix)
                 if table is not None:
                     tables.append(table)
 
@@ -127,8 +127,8 @@ class Storage(object):
             jsontableschema.validate(schema)
 
             # Prepare job body
-            schema = helpers.convert_schema(schema)
-            table = helpers.convert_table(table, self.__prefix)
+            schema = mappers.convert_schema(schema)
+            table = mappers.convert_table(table, self.__prefix)
             body = {
                 'tableReference': {
                     'projectId': self.__project,
@@ -176,7 +176,7 @@ class Storage(object):
                 raise RuntimeError(message)
 
             # Make delete request
-            table = helpers.convert_table(table, self.__prefix)
+            table = mappers.convert_table(table, self.__prefix)
             self.__service.tables().delete(
                     projectId=self.__project,
                     datasetId=self.__dataset,
@@ -201,7 +201,7 @@ class Storage(object):
         """
 
         # Get response
-        table = helpers.convert_table(table, self.__prefix)
+        table = mappers.convert_table(table, self.__prefix)
         response = self.__service.tables().get(
                 projectId=self.__project,
                 datasetId=self.__dataset,
@@ -209,7 +209,7 @@ class Storage(object):
 
         # Get schema
         schema = response['schema']
-        schema = helpers.restore_schema(schema)
+        schema = mappers.restore_schema(schema)
 
         return schema
 
@@ -231,7 +231,7 @@ class Storage(object):
         # Get response
         schema = self.describe(table)
         model = SchemaModel(schema)
-        table = helpers.convert_table(table, self.__prefix)
+        table = mappers.convert_table(table, self.__prefix)
         response = self.__service.tabledata().list(
                 projectId=self.__project,
                 datasetId=self.__dataset,
@@ -266,7 +266,7 @@ class Storage(object):
         bytes.seek(0)
 
         # Prepare job body
-        table = helpers.convert_table(table, self.__prefix)
+        table = mappers.convert_table(table, self.__prefix)
         body = {
             'configuration': {
                 'load': {
