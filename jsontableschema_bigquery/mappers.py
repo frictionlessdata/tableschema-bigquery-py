@@ -8,15 +8,15 @@ import re
 from slugify import slugify
 
 
-# Internal
+# Module API
 
-def convert_table(table, prefix):
+def convert_table(prefix, table):
     """Convert high-level table name to database name.
     """
     return prefix + table
 
 
-def restore_table(table, prefix):
+def restore_table(prefix, table):
     """Restore database table name to high-level name.
     """
     if table.startswith(prefix):

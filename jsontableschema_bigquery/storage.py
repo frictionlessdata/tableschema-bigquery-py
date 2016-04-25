@@ -72,7 +72,7 @@ class Storage(object):
             tables = []
             for table in response.get('tables', []):
                 table = table['tableReference']['tableId']
-                table = mappers.restore_table(table, self.__prefix)
+                table = mappers.restore_table(self.__prefix, table)
                 if table is not None:
                     tables.append(table)
 
@@ -128,7 +128,7 @@ class Storage(object):
 
             # Prepare job body
             schema = mappers.convert_schema(schema)
-            table = mappers.convert_table(table, self.__prefix)
+            table = mappers.convert_table(self.__prefix, table)
             body = {
                 'tableReference': {
                     'projectId': self.__project,
@@ -176,7 +176,7 @@ class Storage(object):
                 raise RuntimeError(message)
 
             # Make delete request
-            table = mappers.convert_table(table, self.__prefix)
+            table = mappers.convert_table(self.__prefix, table)
             self.__service.tables().delete(
                     projectId=self.__project,
                     datasetId=self.__dataset,
@@ -201,7 +201,7 @@ class Storage(object):
         """
 
         # Get response
-        table = mappers.convert_table(table, self.__prefix)
+        table = mappers.convert_table(self.__prefix, table)
         response = self.__service.tables().get(
                 projectId=self.__project,
                 datasetId=self.__dataset,
@@ -231,7 +231,7 @@ class Storage(object):
         # Get response
         schema = self.describe(table)
         model = SchemaModel(schema)
-        table = mappers.convert_table(table, self.__prefix)
+        table = mappers.convert_table(self.__prefix, table)
         response = self.__service.tabledata().list(
                 projectId=self.__project,
                 datasetId=self.__dataset,
@@ -266,7 +266,7 @@ class Storage(object):
         bytes.seek(0)
 
         # Prepare job body
-        table = mappers.convert_table(table, self.__prefix)
+        table = mappers.convert_table(self.__prefix, table)
         body = {
             'configuration': {
                 'load': {
