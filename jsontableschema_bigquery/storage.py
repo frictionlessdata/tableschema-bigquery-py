@@ -9,6 +9,7 @@ import six
 import time
 import jsontableschema
 import unicodecsv as csv
+from jsontableschema import storage as base
 from jsontableschema.model import SchemaModel
 from apiclient.http import MediaIoBaseUpload
 
@@ -17,7 +18,7 @@ from . import mappers
 
 # Module API
 
-class Storage(object):
+class Storage(base.Storage):
     """BigQuery Tabular Storage.
 
     Parameters
