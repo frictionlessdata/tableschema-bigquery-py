@@ -18,6 +18,10 @@
         {
             "name": "rating",
             "type": "number"
+        },
+        {
+            "name": "created_datetime",
+            "type": "datetime"
         }
     ]
 }

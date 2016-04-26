@@ -9,6 +9,7 @@ import six
 import time
 import jsontableschema
 import unicodecsv as csv
+from datetime import datetime
 from jsontableschema import storage as base
 from jsontableschema.model import SchemaModel
 from apiclient.http import MediaIoBaseUpload
@@ -240,7 +241,18 @@ class Storage(base.Storage):
 
         # Yield data
         for row in response['rows']:
-            row = tuple(field['v'] for field in row['f'])
+            values = tuple(field['v'] for field in row['f'])
+            row = []
+            # TODO: move to mappers.restore_row?
+            for index, field in enumerate(model.fields):
+                value = values[index]
+                # Here we fix bigquery "1.234234E9" like datetimes
+                if field['type'] == 'datetime' :
+                    if not isinstance(value, datetime):
+                        value = datetime.utcfromtimestamp(int(float(value)))
+                        # TODO: remove after jsontableschema-py/59 fix
+                        value = '%sZ' % value.isoformat()
+                row.append(value)
             row = tuple(model.convert_row(*row, fail_fast=True))
             yield row
 
