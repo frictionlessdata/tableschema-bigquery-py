@@ -34,6 +34,8 @@ def convert_schema(schema):
         'integer': 'INTEGER',
         'number': 'FLOAT',
         'boolean': 'BOOLEAN',
+        'date': 'TIMESTAMP',
+        'time': 'TIMESTAMP',
         'datetime': 'TIMESTAMP',
     }
 

@@ -9,6 +9,7 @@ import io
 import json
 import uuid
 import pytest
+import datetime
 from copy import deepcopy
 from decimal import Decimal
 from tabulator import topen
@@ -81,7 +82,9 @@ def test_storage():
 def convert_schema(schema):
     schema = deepcopy(schema)
     for field in schema['fields']:
-        if field['type'] in ['array', 'geojson']:
+        if field['type'] in ['date']:
+            field['type'] = 'datetime'
+        elif field['type'] in ['array', 'geojson']:
             field['type'] = 'object'
         if 'format' in field:
             del field['format']
@@ -91,5 +94,12 @@ def convert_data(schema, data):
     result = []
     model = SchemaModel(schema)
     for item in data:
-        result.append(tuple(model.convert_row(*item)))
+        item = tuple(model.convert_row(*item))
+        values = []
+        for index, field in enumerate(schema['fields']):
+            value = item[index]
+            if field['type'] == 'date':
+                value = datetime.datetime.fromordinal(value.toordinal())
+            values.append(value)
+        result.append(tuple(values))
     return result

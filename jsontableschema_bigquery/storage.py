@@ -7,9 +7,9 @@ from __future__ import unicode_literals
 import io
 import six
 import time
+import datetime
 import jsontableschema
 import unicodecsv as csv
-from datetime import datetime
 from jsontableschema import storage as base
 from jsontableschema.model import SchemaModel
 from apiclient.http import MediaIoBaseUpload
@@ -45,6 +45,7 @@ class Storage(base.Storage):
         self.__dataset = dataset
         self.__prefix = prefix
         self.__tables = None
+        self.__schemas = {}
 
     def __repr__(self):
 
@@ -125,12 +126,13 @@ class Storage(base.Storage):
                 message = 'Table "%s" already exists' % table
                 raise RuntimeError(message)
 
-            # Validate schema
-            jsontableschema.validate(schema)
+            # Add to schemas
+            self.__schemas[table] = schema
 
             # Prepare job body
-            schema = mappers.convert_schema(schema)
             table = mappers.convert_table(self.__prefix, table)
+            jsontableschema.validate(schema)
+            schema = mappers.convert_schema(schema)
             body = {
                 'tableReference': {
                     'projectId': self.__project,
@@ -177,6 +179,10 @@ class Storage(base.Storage):
                 message = 'Table "%s" doesn\'t exist.' % self
                 raise RuntimeError(message)
 
+            # Remove from schemas
+            if table in self.__schemas:
+                del self.__schemas[table]
+
             # Make delete request
             table = mappers.convert_table(self.__prefix, table)
             self.__service.tables().delete(
@@ -202,16 +208,17 @@ class Storage(base.Storage):
 
         """
 
-        # Get response
-        table = mappers.convert_table(self.__prefix, table)
-        response = self.__service.tables().get(
-                projectId=self.__project,
-                datasetId=self.__dataset,
-                tableId=table).execute()
-
         # Get schema
-        schema = response['schema']
-        schema = mappers.restore_schema(schema)
+        if table in self.__schemas:
+            schema = self.__schemas[table]
+        else:
+            table = mappers.convert_table(self.__prefix, table)
+            response = self.__service.tables().get(
+                    projectId=self.__project,
+                    datasetId=self.__dataset,
+                    tableId=table).execute()
+            schema = response['schema']
+            schema = mappers.restore_schema(schema)
 
         return schema
 
@@ -243,16 +250,24 @@ class Storage(base.Storage):
         for row in response['rows']:
             values = tuple(field['v'] for field in row['f'])
             row = []
+
             # TODO: move to mappers.restore_row?
             for index, field in enumerate(model.fields):
                 value = values[index]
                 # Here we fix bigquery "1.234234E9" like datetimes
-                if field['type'] == 'datetime' :
-                    if not isinstance(value, datetime):
-                        value = datetime.utcfromtimestamp(int(float(value)))
-                        # TODO: remove after jsontableschema-py/59 fix
-                        value = '%sZ' % value.isoformat()
+                if field['type'] == 'date':
+                    value = datetime.datetime.utcfromtimestamp(int(float(value)))
+                    # TODO: remove after jsontableschema-py/59 fix
+                    fmt = '%Y-%m-%d'
+                    if field.get('format', '').startswith('fmt:'):
+                        fmt = field['format'].replace('fmt:', '')
+                    value = value.strftime(fmt)
+                elif field['type'] == 'datetime':
+                    value = datetime.datetime.utcfromtimestamp(int(float(value)))
+                    # TODO: remove after jsontableschema-py/59 fix
+                    value = '%sZ' % value.isoformat()
                 row.append(value)
+
             row = tuple(model.convert_row(*row, fail_fast=True))
             yield row
 
@@ -273,8 +288,20 @@ class Storage(base.Storage):
         model = SchemaModel(schema)
         bytes = io.BufferedRandom(io.BytesIO())
         writer = csv.writer(bytes, encoding='utf-8')
-        for row in data:
-            row = tuple(model.convert_row(*row, fail_fast=True))
+        for values in data:
+            row = []
+            values = tuple(model.convert_row(*values, fail_fast=True))
+
+            # TODO: move to mappers.convert_row?
+            for index, field in enumerate(model.fields):
+                value = values[index]
+                # Here we convert date to datetime
+                if field['type'] == 'date':
+                    value = datetime.datetime.fromordinal(value.toordinal())
+                    # TODO: remove after jsontableschema-py/59 fix
+                    value = '%sZ' % value.isoformat()
+                row.append(value)
+
             writer.writerow(row)
         bytes.seek(0)
 
