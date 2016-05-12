@@ -77,6 +77,29 @@ def test_storage():
         storage.delete('articles')
 
 
+def test_storage_bigdata():
+
+    # Generate schema/data
+    schema = {'fields': [{'name': 'id', 'type': 'integer'}]}
+    data = [(value,) for value in range(0, 15000)]
+
+    # Push data
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
+    credentials = GoogleCredentials.get_application_default()
+    service = build('bigquery', 'v2', credentials=credentials)
+    project = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
+    dataset = 'resource'
+    prefix = '%s_' % uuid.uuid4().hex
+    storage = Storage(service, project, dataset, prefix=prefix)
+    for table in reversed(storage.tables):
+        storage.delete(table)
+    storage.create('table', schema)
+    storage.write('table', data)
+
+    # Pull data
+    assert list(storage.read('table')) == data
+
+
 # Helpers
 
 def convert_schema(schema):
