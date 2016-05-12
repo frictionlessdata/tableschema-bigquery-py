@@ -282,16 +282,29 @@ class Storage(base.Storage):
             List of data tuples.
 
         """
+        BUFFER_ROWS = 10000
+
+        data_chunk = []
+        for row in data:
+            data_chunk.append(row)
+            if len(data_chunk) > BUFFER_ROWS:
+                self.__write_data_chunk(table, data_chunk)
+                data_chunk = []
+        if len(data_chunk) > 0:
+            self.__write_data_chunk(table, data_chunk)
+
+    # Private
+
+    def __write_data_chunk(self, table, data_chunk):
 
         # Process data to byte stream csv
         schema = self.describe(table)
         model = SchemaModel(schema)
         bytes = io.BufferedRandom(io.BytesIO())
         writer = csv.writer(bytes, encoding='utf-8')
-        for values in data:
+        for values in data_chunk:
             row = []
             values = tuple(model.convert_row(*values, fail_fast=True))
-
             # TODO: move to mappers.convert_row?
             for index, field in enumerate(model.fields):
                 value = values[index]
@@ -301,7 +314,6 @@ class Storage(base.Storage):
                     # TODO: remove after jsontableschema-py/59 fix
                     value = '%sZ' % value.isoformat()
                 row.append(value)
-
             writer.writerow(row)
         bytes.seek(0)
 
@@ -331,7 +343,6 @@ class Storage(base.Storage):
             media_body=media_body).execute()
         self.__wait_response(response)
 
-    # Private
 
     def __wait_response(self, response):
 
