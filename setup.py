@@ -28,10 +28,8 @@ INSTALL_REQUIRES = [
     'google-api-python-client',
     'tabulator',
 ]
-LINT_REQUIRES = [
-    'pylint',
-]
 TESTS_REQUIRE = [
+    'pylama',
     'tox',
 ]
 README = read('README.md')
@@ -47,7 +45,7 @@ setup(
     include_package_data=True,
     install_requires=INSTALL_REQUIRES,
     tests_require=TESTS_REQUIRE,
-    extras_require={'develop': LINT_REQUIRES + TESTS_REQUIRE},
+    extras_require={'develop': TESTS_REQUIRE},
     zip_safe=False,
     long_description=README,
     description='Generate BigQuery tables, load and extract data, based on JSON Table Schema descriptors.',

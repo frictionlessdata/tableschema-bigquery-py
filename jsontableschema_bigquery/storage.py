@@ -256,14 +256,16 @@ class Storage(base.Storage):
                 value = values[index]
                 # Here we fix bigquery "1.234234E9" like datetimes
                 if field['type'] == 'date':
-                    value = datetime.datetime.utcfromtimestamp(int(float(value)))
+                    value = datetime.datetime.utcfromtimestamp(
+                        int(float(value)))
                     # TODO: remove after jsontableschema-py/59 fix
                     fmt = '%Y-%m-%d'
                     if field.get('format', '').startswith('fmt:'):
                         fmt = field['format'].replace('fmt:', '')
                     value = value.strftime(fmt)
                 elif field['type'] == 'datetime':
-                    value = datetime.datetime.utcfromtimestamp(int(float(value)))
+                    value = datetime.datetime.utcfromtimestamp(
+                        int(float(value)))
                     # TODO: remove after jsontableschema-py/59 fix
                     value = '%sZ' % value.isoformat()
                 row.append(value)
@@ -342,7 +344,6 @@ class Storage(base.Storage):
             body=body,
             media_body=media_body).execute()
         self.__wait_response(response)
-
 
     def __wait_response(self, response):
 
