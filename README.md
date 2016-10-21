@@ -45,13 +45,13 @@ storage = Storage(service, project, 'dataset', prefix='prefix')
 Then we could interact with storage:
 
 ```python
-storage.tables
-storage.check('table_name') # check existence
-storage.create('table_name', schema)
-storage.delete('table_name')
-storage.describe('table_name') # return schema
-storage.read('table_name') # return data
-storage.write('table_name', data)
+storage.buckets
+storage.create('bucket', descriptor)
+storage.delete('bucket')
+storage.describe('bucket') # return descriptor
+storage.iter('bucket') # yields rows
+storage.read('bucket') # return rows
+storage.write('bucket', rows)
 ```
 
 ### Mappings
