@@ -12,11 +12,10 @@ import pytest
 import datetime
 from copy import deepcopy
 from decimal import Decimal
-from tabulator import topen
+from tabulator import Stream
+from jsontableschema import Schema
 from apiclient.discovery import build
 from oauth2client.client import GoogleCredentials
-from jsontableschema.model import SchemaModel
-
 from jsontableschema_bigquery import Storage
 
 
@@ -25,8 +24,8 @@ from jsontableschema_bigquery import Storage
 def test_storage():
 
     # Get resources
-    articles_schema = json.load(io.open('data/articles.json', encoding='utf-8'))
-    articles_data = topen('data/articles.csv', with_headers=True).read()
+    articles_descriptor = json.load(io.open('data/articles.json', encoding='utf-8'))
+    articles_rows = Stream('data/articles.csv', headers=1).open().read()
 
     # Prepare BigQuery
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
@@ -39,51 +38,49 @@ def test_storage():
     # Storage
     storage = Storage(service, project, dataset, prefix=prefix)
 
-    # Delete tables
-    for table in reversed(storage.tables):
-        storage.delete(table)
+    # Delete buckets
+    storage.delete()
 
-    # Create tables
-    storage.create('articles', articles_schema)
+    # Create buckets
+    storage.create('articles', articles_descriptor)
 
-    # Write data to tables
-    storage.write('articles', articles_data)
+    # Write data to buckets
+    storage.write('articles', articles_rows)
 
     # Create new storage to use reflection only
     storage = Storage(service, project, dataset, prefix=prefix)
 
-    # Create existent table
+    # Create existent bucket
     with pytest.raises(RuntimeError):
-        storage.create('articles', articles_schema)
+        storage.create('articles', articles_descriptor)
 
-    # Get table representation
+    # Assert representation
     assert repr(storage).startswith('Storage')
 
-    # Get tables list
-    assert storage.tables == ['articles']
+    # Assert buckets
+    assert storage.buckets == ['articles']
 
-    # Get table schemas
-    assert storage.describe('articles') == convert_schema(articles_schema)
+    # Assert descriptors
+    assert storage.describe('articles') == sync_descriptor(articles_descriptor)
 
-    # Get table data
-    assert list(storage.read('articles')) == convert_data(articles_schema, articles_data)
+    # Assert rows
+    assert list(storage.read('articles')) == sunc_rows(articles_descriptor, articles_rows)
 
-    # Delete tables
-    for table in reversed(storage.tables):
-        storage.delete(table)
-
-    # Delete non existent table
+    # Delete non existent bucket
     with pytest.raises(RuntimeError):
-        storage.delete('articles')
+        storage.delete('non_existent')
+
+    # Delete buckets
+    storage.delete()
 
 
 def test_storage_bigdata():
 
     # Generate schema/data
-    schema = {'fields': [{'name': 'id', 'type': 'integer'}]}
-    data = [(value,) for value in range(0, 15000)]
+    descriptor = {'fields': [{'name': 'id', 'type': 'integer'}]}
+    rows = [[value,] for value in range(0, 15000)]
 
-    # Push data
+    # Push rows
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
     credentials = GoogleCredentials.get_application_default()
     service = build('bigquery', 'v2', credentials=credentials)
@@ -91,38 +88,36 @@ def test_storage_bigdata():
     dataset = 'resource'
     prefix = '%s_' % uuid.uuid4().hex
     storage = Storage(service, project, dataset, prefix=prefix)
-    for table in reversed(storage.tables):
-        storage.delete(table)
-    storage.create('table', schema)
-    storage.write('table', data)
+    storage.create('bucket', descriptor, force=True)
+    storage.write('bucket', rows)
 
-    # Pull data
-    assert list(storage.read('table')) == data
+    # Pull rows
+    assert list(storage.read('bucket')) == rows
 
 
 # Helpers
 
-def convert_schema(schema):
-    schema = deepcopy(schema)
-    for field in schema['fields']:
+def sync_descriptor(descriptor):
+    descriptor = deepcopy(descriptor)
+    for field in descriptor['fields']:
         if field['type'] in ['date']:
             field['type'] = 'datetime'
         elif field['type'] in ['array', 'geojson']:
             field['type'] = 'object'
         if 'format' in field:
             del field['format']
-    return schema
+    return descriptor
 
-def convert_data(schema, data):
+def sunc_rows(descriptor, rows):
     result = []
-    model = SchemaModel(schema)
-    for item in data:
-        item = tuple(model.convert_row(*item))
+    schema = Schema(descriptor)
+    for row in rows:
+        row = schema.cast_row(row)
         values = []
-        for index, field in enumerate(schema['fields']):
-            value = item[index]
+        for index, field in enumerate(descriptor['fields']):
+            value = row[index]
             if field['type'] == 'date':
                 value = datetime.datetime.fromordinal(value.toordinal())
             values.append(value)
-        result.append(tuple(values))
+        result.append(values)
     return result
