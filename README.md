@@ -1,6 +1,6 @@
 # jsontableschema-bigquery-py
 
-[![Travis](https://img.shields.io/travis/frictionlessdata/jsontableschema-bigquery-py.svg)](https://travis-ci.org/frictionlessdata/jsontableschema-bigquery-py)
+[![Travis](https://img.shields.io/travis/frictionlessdata/jsontableschema-bigquery-py/master.svg)](https://travis-ci.org/frictionlessdata/jsontableschema-bigquery-py)
 [![Coveralls](http://img.shields.io/coveralls/frictionlessdata/jsontableschema-bigquery-py.svg?branch=master)](https://coveralls.io/r/frictionlessdata/jsontableschema-bigquery-py?branch=master)
 [![PyPi](https://img.shields.io/pypi/v/jsontableschema-bigquery.svg)](https://pypi.python.org/pypi/jsontableschema-bigquery)
 [![SemVer](https://img.shields.io/badge/versions-SemVer-brightgreen.svg)](http://semver.org/)
