@@ -10,22 +10,23 @@ from slugify import slugify
 
 # Module API
 
-def convert_table(prefix, table):
-    """Convert high-level table name to database name.
+def bucket_to_tablename(prefix, bucket):
+    ""
+    """Convert bucket to Bigquery tablename.
     """
-    return prefix + table
+    return prefix + bucket
 
 
-def restore_table(prefix, table):
-    """Restore database table name to high-level name.
+def tablename_to_bucket(prefix, tablename):
+    """Convert Bigquery tablename to bucket.
     """
-    if table.startswith(prefix):
-        return table.replace(prefix, '', 1)
+    if tablename.startswith(prefix):
+        return tablename.replace(prefix, '', 1)
     return None
 
 
-def convert_schema(schema):
-    """Convert JSONTableSchema schema to BigQuery schema.
+def descriptor_to_apischema(descriptor):
+    """Convert descriptor to BigQuery apischema (schema).
     """
 
     # Mapping
@@ -39,9 +40,9 @@ def convert_schema(schema):
         'datetime': 'TIMESTAMP',
     }
 
-    # Schema
+    # Convert
     fields = []
-    for field in schema['fields']:
+    for field in descriptor['fields']:
         try:
             ftype = mapping[field['type']]
         except KeyError:
@@ -50,19 +51,18 @@ def convert_schema(schema):
         mode = 'NULLABLE'
         if field.get('constraints', {}).get('required', False):
             mode = 'REQUIRED'
-        resfield = {
-            'name': convert_field_name(field['name']),
+        fields.append({
+            'name': _slugify_field_name(field['name']),
             'type': ftype,
             'mode': mode,
-        }
-        fields.append(resfield)
-    schema = {'fields': fields}
+        })
+    apischema = {'fields': fields}
 
-    return schema
+    return apischema
 
 
-def restore_schema(schema):
-    """Convert BigQuery schema to JSONTableSchema schema.
+def apischema_to_descriptor(apischema):
+    """Convert BigQuery apischema (schema) to descriptor.
     """
 
     # Mapping
@@ -74,9 +74,9 @@ def restore_schema(schema):
         'TIMESTAMP': 'datetime',
     }
 
-    # Schema
+    # Convert
     fields = []
-    for field in schema['fields']:
+    for field in apischema['fields']:
         try:
             ftype = mapping[field['type']]
         except KeyError:
@@ -89,17 +89,21 @@ def restore_schema(schema):
         if field.get('mode', 'NULLABLE') != 'NULLABLE':
             resfield['constraints'] = {'required': True}
         fields.append(resfield)
-    schema = {'fields': fields}
+    descriptor = {'fields': fields}
 
-    return schema
+    return descriptor
 
 
-def convert_field_name(name):
-    # Check https://cloud.google.com/bigquery/docs/reference/v2/tables for
-    # reference
+# Internal
+
+def _slugify_field_name(name):
+
+    # Referene:
+    # https://cloud.google.com/bigquery/docs/reference/v2/tables
     MAX_LENGTH = 128
     VALID_NAME = '^[a-zA-Z_]\w{0,%d}$' % (MAX_LENGTH-1)
 
+    # Convert
     if not re.match(VALID_NAME, name):
         name = slugify(name, separator='_')
         if not re.match('^[a-zA-Z_]', name):

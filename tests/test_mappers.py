@@ -11,10 +11,10 @@ from jsontableschema_bigquery import mappers
 
 # Tests
 
-def test_convert_table():
-    assert mappers.convert_table('prefix_', 'table') == 'prefix_table'
+def test_bucket_to_tablename():
+    assert mappers.bucket_to_tablename('prefix_', 'bucket') == 'prefix_bucket'
 
 
-def test_restore_table():
-    assert mappers.restore_table('prefix_', 'prefix_table') == 'table'
-    assert mappers.restore_table('prefix_', 'xxxxxx_table') == None
+def test_tablename_to_bucket():
+    assert mappers.tablename_to_bucket('prefix_', 'prefix_bucket') == 'bucket'
+    assert mappers.tablename_to_bucket('prefix_', 'xxxxxx_bucket') == None

@@ -8,30 +8,25 @@ import io
 import six
 import time
 import datetime
+import unicodecsv
 import jsontableschema
-import unicodecsv as csv
-from jsontableschema import storage as base
-from jsontableschema.model import SchemaModel
+from jsontableschema import Schema
 from apiclient.http import MediaIoBaseUpload
-
 from . import mappers
 
 
 # Module API
 
-class Storage(base.Storage):
+class Storage(object):
     """BigQuery Tabular Storage.
 
-    Parameters
-    ----------
-    service: object
-        Service object from API.
-    project: str
-        Project name.
-    dataset: str
-        Dataset name.
-    prefix: str
-        Prefix for all tables.
+    It's an implementation of `jsontablescema.Storage`.
+
+    Args:
+        service (object): service object from API
+        project (str): project name
+        dataset (str): dataset name
+        prefix (str): prefix for all buckets
 
     """
 
@@ -44,290 +39,223 @@ class Storage(base.Storage):
         self.__project = project
         self.__dataset = dataset
         self.__prefix = prefix
-        self.__tables = None
-        self.__schemas = {}
+        self.__buckets = None
+        self.__descriptors = {}
 
     def __repr__(self):
 
         # Template and format
         template = 'Storage <{service}/{project}-{dataset}>'
         text = template.format(
-                service=self.__service,
-                project=self.__project,
-                dataset=self.__dataset)
+            service=self.__service,
+            project=self.__project,
+            dataset=self.__dataset)
 
         return text
 
     @property
-    def tables(self):
-        """Return list of storage's table names.
-        """
+    def buckets(self):
 
         # No cached value
-        if self.__tables is None:
+        if self.__buckets is None:
 
             # Get response
             response = self.__service.tables().list(
-                    projectId=self.__project,
-                    datasetId=self.__dataset).execute()
+                projectId=self.__project,
+                datasetId=self.__dataset).execute()
 
-            # Extract tables
-            tables = []
+            # Extract buckets
+            self.__buckets = []
             for table in response.get('tables', []):
-                table = table['tableReference']['tableId']
-                table = mappers.restore_table(self.__prefix, table)
-                if table is not None:
-                    tables.append(table)
+                tablename = table['tableReference']['tableId']
+                bucket = mappers.tablename_to_bucket(self.__prefix, tablename)
+                if bucket is not None:
+                    self.__buckets.append(bucket)
 
-            # Save to cache
-            self.__tables = tables
+        return self.__buckets
 
-        return self.__tables
-
-    def check(self, table):
-        """Return if table exists.
-        """
-
-        # Check existence
-        existence = table in self.tables
-
-        return existence
-
-    def create(self, table, schema):
-        """Create table by schema.
-
-        Parameters
-        ----------
-        table: str/list
-            Table name or list of table names.
-        schema: dict/list
-            JSONTableSchema schema or list of schemas.
-
-        Raises
-        ------
-        RuntimeError
-            If table already exists.
-
-        """
+    def create(self, bucket, descriptor, force=False):
 
         # Make lists
-        tables = table
-        if isinstance(table, six.string_types):
-            tables = [table]
-        schemas = schema
-        if isinstance(schema, dict):
-            schemas = [schema]
+        buckets = bucket
+        if isinstance(bucket, six.string_types):
+            buckets = [bucket]
+        descriptors = descriptor
+        if isinstance(descriptor, dict):
+            descriptors = [descriptor]
 
-        # Iterate over tables/schemas
-        for table, schema in zip(tables, schemas):
+        # Iterate over buckets/descriptors
+        for bucket, descriptor in zip(buckets, descriptors):
 
-            # Check not existent
-            if self.check(table):
-                message = 'Table "%s" already exists' % table
-                raise RuntimeError(message)
+            # Existent bucket
+            if bucket in self.buckets:
+                if not force:
+                    message = 'Bucket "%s" already exists' % bucket
+                    raise RuntimeError(message)
+                self.delete(bucket)
 
             # Add to schemas
-            self.__schemas[table] = schema
+            self.__descriptors[bucket] = descriptor
 
             # Prepare job body
-            table = mappers.convert_table(self.__prefix, table)
-            jsontableschema.validate(schema)
-            schema = mappers.convert_schema(schema)
+            jsontableschema.validate(descriptor)
+            tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
+            apischema = mappers.descriptor_to_apischema(descriptor)
             body = {
                 'tableReference': {
                     'projectId': self.__project,
                     'datasetId': self.__dataset,
-                    'tableId': table,
+                    'tableId': tablename,
                 },
-                'schema': schema,
+                'schema': apischema,
             }
 
             # Make request
             self.__service.tables().insert(
-                    projectId=self.__project,
-                    datasetId=self.__dataset,
-                    body=body).execute()
+                projectId=self.__project,
+                datasetId=self.__dataset,
+                body=body).execute()
 
-        # Remove tables cache
-        self.__tables = None
+        # Remove buckets cache
+        self.__buckets = None
 
-    def delete(self, table):
-        """Delete table.
-
-        Parameters
-        ----------
-        table: str/list
-            Table name or list of table names.
-
-        Raises
-        ------
-        RuntimeError
-            If table doesn't exist.
-
-        """
+    def delete(self, bucket=None, ignore=False):
 
         # Make lists
-        tables = table
-        if isinstance(table, six.string_types):
-            tables = [table]
+        buckets = bucket
+        if isinstance(bucket, six.string_types):
+            buckets = [bucket]
+        elif bucket is None:
+            buckets = reversed(self.buckets)
 
-        # Iterater over tables
-        for table in tables:
+        # Iterater over buckets
+        for bucket in buckets:
 
-            # Check existent
-            if not self.check(table):
-                message = 'Table "%s" doesn\'t exist.' % self
-                raise RuntimeError(message)
+            # Non-existent bucket
+            if bucket not in self.buckets:
+                if not ignore:
+                    message = 'Bucket "%s" doesn\'t exist.' % bucket
+                    raise RuntimeError(message)
 
-            # Remove from schemas
-            if table in self.__schemas:
-                del self.__schemas[table]
+            # Remove from descriptors
+            if bucket in self.__descriptors:
+                del self.__descriptors[bucket]
 
             # Make delete request
-            table = mappers.convert_table(self.__prefix, table)
+            tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
             self.__service.tables().delete(
                     projectId=self.__project,
                     datasetId=self.__dataset,
-                    tableId=table).execute()
+                    tableId=tablename).execute()
 
         # Remove tables cache
-        self.__tables = None
+        self.__buckets = None
 
-    def describe(self, table):
-        """Return table's JSONTableSchema schema.
+    def describe(self, bucket, descriptor=None):
 
-        Parameters
-        ----------
-        table: str
-            Table name.
+        # Set descriptor
+        if descriptor is not None:
+            self.__descriptors[bucket] = descriptor
 
-        Returns
-        -------
-        dict
-            JSONTableSchema schema.
-
-        """
-
-        # Get schema
-        if table in self.__schemas:
-            schema = self.__schemas[table]
+        # Get descriptor
         else:
-            table = mappers.convert_table(self.__prefix, table)
-            response = self.__service.tables().get(
-                    projectId=self.__project,
-                    datasetId=self.__dataset,
-                    tableId=table).execute()
-            schema = response['schema']
-            schema = mappers.restore_schema(schema)
+            descriptor = self.__descriptors.get(bucket)
+            if descriptor is None:
+                tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
+                response = self.__service.tables().get(
+                        projectId=self.__project,
+                        datasetId=self.__dataset,
+                        tableId=tablename).execute()
+                apischema = response['schema']
+                descriptor = mappers.apischema_to_descriptor(apischema)
 
-        return schema
+        return descriptor
 
-    def read(self, table):
-        """Read data from table.
-
-        Parameters
-        ----------
-        table: str
-            Table name.
-
-        Returns
-        -------
-        generator
-            Data tuples generator.
-
-        """
+    def iter(self, bucket):
 
         # Get response
-        schema = self.describe(table)
-        model = SchemaModel(schema)
-        table = mappers.convert_table(self.__prefix, table)
+        descriptor = self.describe(bucket)
+        schema = Schema(descriptor)
+        tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
         response = self.__service.tabledata().list(
                 projectId=self.__project,
                 datasetId=self.__dataset,
-                tableId=table).execute()
+                tableId=tablename).execute()
 
-        # Yield data
-        for row in response['rows']:
-            values = tuple(field['v'] for field in row['f'])
+        # Yield rows
+        for fields in response['rows']:
             row = []
-
-            # TODO: move to mappers.restore_row?
-            for index, field in enumerate(model.fields):
+            values = [field['v'] for field in fields['f']]
+            for index, field in enumerate(schema.fields):
                 value = values[index]
                 # Here we fix bigquery "1.234234E9" like datetimes
-                if field['type'] == 'date':
+                if field.type == 'date':
                     value = datetime.datetime.utcfromtimestamp(
                         int(float(value)))
-                    # TODO: remove after jsontableschema-py/59 fix
                     fmt = '%Y-%m-%d'
-                    if field.get('format', '').startswith('fmt:'):
-                        fmt = field['format'].replace('fmt:', '')
+                    if field.format.startswith('fmt:'):
+                        fmt = field.format.replace('fmt:', '')
                     value = value.strftime(fmt)
-                elif field['type'] == 'datetime':
+                elif field.type == 'datetime':
                     value = datetime.datetime.utcfromtimestamp(
                         int(float(value)))
-                    # TODO: remove after jsontableschema-py/59 fix
                     value = '%sZ' % value.isoformat()
                 row.append(value)
+            yield schema.cast_row(row)
 
-            row = tuple(model.convert_row(*row, fail_fast=True))
-            yield row
+    def read(self, bucket):
 
-    def write(self, table, data):
-        """Write data to table.
+        # Get rows
+        rows = list(self.iter(bucket))
 
-        Parameters
-        ----------
-        table: str
-            Table name.
-        data: list
-            List of data tuples.
+        return rows
 
-        """
-        BUFFER_ROWS = 10000
+    def write(self, bucket, rows):
 
-        data_chunk = []
-        for row in data:
-            data_chunk.append(row)
-            if len(data_chunk) > BUFFER_ROWS:
-                self.__write_data_chunk(table, data_chunk)
-                data_chunk = []
-        if len(data_chunk) > 0:
-            self.__write_data_chunk(table, data_chunk)
+        # Prepare
+        BUFFER_SIZE = 10000
+
+        # Write
+        rows_buffer = []
+        for row in rows:
+            rows_buffer.append(row)
+            if len(rows_buffer) > BUFFER_SIZE:
+                self.__write_rows_buffer(bucket, rows_buffer)
+                rows_buffer = []
+        if len(rows_buffer) > 0:
+            self.__write_rows_buffer(bucket, rows_buffer)
 
     # Private
 
-    def __write_data_chunk(self, table, data_chunk):
+    def __write_rows_buffer(self, bucket, rows_buffer):
 
         # Process data to byte stream csv
-        schema = self.describe(table)
-        model = SchemaModel(schema)
+        descriptor = self.describe(bucket)
+        schema = Schema(descriptor)
         bytes = io.BufferedRandom(io.BytesIO())
-        writer = csv.writer(bytes, encoding='utf-8')
-        for values in data_chunk:
+        writer = unicodecsv.writer(bytes, encoding='utf-8')
+        for values in rows_buffer:
             row = []
-            values = tuple(model.convert_row(*values, fail_fast=True))
-            # TODO: move to mappers.convert_row?
-            for index, field in enumerate(model.fields):
+            values = schema.cast_row(values)
+            for index, field in enumerate(schema.fields):
                 value = values[index]
                 # Here we convert date to datetime
-                if field['type'] == 'date':
+                if field.type == 'date':
                     value = datetime.datetime.fromordinal(value.toordinal())
-                    # TODO: remove after jsontableschema-py/59 fix
                     value = '%sZ' % value.isoformat()
                 row.append(value)
             writer.writerow(row)
         bytes.seek(0)
 
         # Prepare job body
-        table = mappers.convert_table(self.__prefix, table)
+        tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
         body = {
             'configuration': {
                 'load': {
                     'destinationTable': {
                         'projectId': self.__project,
                         'datasetId': self.__dataset,
-                        'tableId': table
+                        'tableId': tablename
                     },
                     'sourceFormat': 'CSV',
                 }
