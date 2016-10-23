@@ -10,23 +10,22 @@ from slugify import slugify
 
 # Module API
 
-def bucket_to_tablename(prefix, bucket):
-    ""
-    """Convert bucket to Bigquery tablename.
+def bucket_to_table(prefix, bucket):
+    """Convert bucket name to Bigquery table name.
     """
     return prefix + bucket
 
 
-def tablename_to_bucket(prefix, tablename):
-    """Convert Bigquery tablename to bucket.
+def table_to_bucket(prefix, table):
+    """Convert Bigquery table name to bucket name.
     """
-    if tablename.startswith(prefix):
-        return tablename.replace(prefix, '', 1)
+    if table.startswith(prefix):
+        return table.replace(prefix, '', 1)
     return None
 
 
-def descriptor_to_apischema(descriptor):
-    """Convert descriptor to BigQuery apischema (schema).
+def descriptor_to_nativedesc(descriptor):
+    """Convert descriptor to BigQuery nativedesc.
     """
 
     # Mapping
@@ -56,13 +55,13 @@ def descriptor_to_apischema(descriptor):
             'type': ftype,
             'mode': mode,
         })
-    apischema = {'fields': fields}
+    nativedesc = {'fields': fields}
 
-    return apischema
+    return nativedesc
 
 
-def apischema_to_descriptor(apischema):
-    """Convert BigQuery apischema (schema) to descriptor.
+def nativedesc_to_descriptor(nativedesc):
+    """Convert BigQuery nativedesc to descriptor.
     """
 
     # Mapping
@@ -76,7 +75,7 @@ def apischema_to_descriptor(apischema):
 
     # Convert
     fields = []
-    for field in apischema['fields']:
+    for field in nativedesc['fields']:
         try:
             ftype = mapping[field['type']]
         except KeyError:
