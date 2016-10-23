@@ -11,7 +11,6 @@ from slugify import slugify
 # Module API
 
 def bucket_to_tablename(prefix, bucket):
-    ""
     """Convert bucket to Bigquery tablename.
     """
     return prefix + bucket
@@ -25,8 +24,8 @@ def tablename_to_bucket(prefix, tablename):
     return None
 
 
-def descriptor_to_apischema(descriptor):
-    """Convert descriptor to BigQuery apischema (schema).
+def descriptor_to_nativedesc(descriptor):
+    """Convert descriptor to BigQuery nativedesc.
     """
 
     # Mapping
@@ -56,13 +55,13 @@ def descriptor_to_apischema(descriptor):
             'type': ftype,
             'mode': mode,
         })
-    apischema = {'fields': fields}
+    nativedesc = {'fields': fields}
 
-    return apischema
+    return nativedesc
 
 
-def apischema_to_descriptor(apischema):
-    """Convert BigQuery apischema (schema) to descriptor.
+def nativedesc_to_descriptor(nativedesc):
+    """Convert BigQuery nativedesc to descriptor.
     """
 
     # Mapping
@@ -76,7 +75,7 @@ def apischema_to_descriptor(apischema):
 
     # Convert
     fields = []
-    for field in apischema['fields']:
+    for field in nativedesc['fields']:
         try:
             ftype = mapping[field['type']]
         except KeyError:

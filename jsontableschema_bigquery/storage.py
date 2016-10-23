@@ -100,14 +100,14 @@ class Storage(object):
             # Prepare job body
             jsontableschema.validate(descriptor)
             tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
-            apischema = mappers.descriptor_to_apischema(descriptor)
+            nativedesc = mappers.descriptor_to_nativedesc(descriptor)
             body = {
                 'tableReference': {
                     'projectId': self.__project,
                     'datasetId': self.__dataset,
                     'tableId': tablename,
                 },
-                'schema': apischema,
+                'schema': nativedesc,
             }
 
             # Make request
@@ -144,9 +144,9 @@ class Storage(object):
             # Make delete request
             tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
             self.__service.tables().delete(
-                    projectId=self.__project,
-                    datasetId=self.__dataset,
-                    tableId=tablename).execute()
+                projectId=self.__project,
+                datasetId=self.__dataset,
+                tableId=tablename).execute()
 
         # Remove tables cache
         self.__buckets = None
@@ -163,11 +163,11 @@ class Storage(object):
             if descriptor is None:
                 tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
                 response = self.__service.tables().get(
-                        projectId=self.__project,
-                        datasetId=self.__dataset,
-                        tableId=tablename).execute()
-                apischema = response['schema']
-                descriptor = mappers.apischema_to_descriptor(apischema)
+                    projectId=self.__project,
+                    datasetId=self.__dataset,
+                    tableId=tablename).execute()
+                nativedesc = response['schema']
+                descriptor = mappers.nativedesc_to_descriptor(nativedesc)
 
         return descriptor
 
@@ -178,9 +178,9 @@ class Storage(object):
         schema = Schema(descriptor)
         tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
         response = self.__service.tabledata().list(
-                projectId=self.__project,
-                datasetId=self.__dataset,
-                tableId=tablename).execute()
+            projectId=self.__project,
+            datasetId=self.__dataset,
+            tableId=tablename).execute()
 
         # Yield rows
         for fields in response['rows']:
