@@ -67,8 +67,8 @@ class Storage(object):
             # Extract buckets
             self.__buckets = []
             for table in response.get('tables', []):
-                table = table['tableReference']['tableId']
-                bucket = mappers.table_to_bucket(self.__prefix, table)
+                tablename = table['tableReference']['tableId']
+                bucket = mappers.tablename_to_bucket(self.__prefix, tablename)
                 if bucket is not None:
                     self.__buckets.append(bucket)
 
@@ -99,13 +99,13 @@ class Storage(object):
 
             # Prepare job body
             jsontableschema.validate(descriptor)
-            table = mappers.bucket_to_table(self.__prefix, bucket)
+            tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
             nativedesc = mappers.descriptor_to_nativedesc(descriptor)
             body = {
                 'tableReference': {
                     'projectId': self.__project,
                     'datasetId': self.__dataset,
-                    'tableId': table,
+                    'tableId': tablename,
                 },
                 'schema': nativedesc,
             }
@@ -142,11 +142,11 @@ class Storage(object):
                 del self.__descriptors[bucket]
 
             # Make delete request
-            table = mappers.bucket_to_table(self.__prefix, bucket)
+            tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
             self.__service.tables().delete(
                 projectId=self.__project,
                 datasetId=self.__dataset,
-                tableId=table).execute()
+                tableId=tablename).execute()
 
         # Remove tables cache
         self.__buckets = None
@@ -161,11 +161,11 @@ class Storage(object):
         else:
             descriptor = self.__descriptors.get(bucket)
             if descriptor is None:
-                table = mappers.bucket_to_table(self.__prefix, bucket)
+                tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
                 response = self.__service.tables().get(
                     projectId=self.__project,
                     datasetId=self.__dataset,
-                    tableId=table).execute()
+                    tableId=tablename).execute()
                 nativedesc = response['schema']
                 descriptor = mappers.nativedesc_to_descriptor(nativedesc)
 
@@ -176,11 +176,11 @@ class Storage(object):
         # Get response
         descriptor = self.describe(bucket)
         schema = Schema(descriptor)
-        table = mappers.bucket_to_table(self.__prefix, bucket)
+        tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
         response = self.__service.tabledata().list(
             projectId=self.__project,
             datasetId=self.__dataset,
-            tableId=table).execute()
+            tableId=tablename).execute()
 
         # Yield rows
         for fields in response['rows']:
@@ -248,14 +248,14 @@ class Storage(object):
         bytes.seek(0)
 
         # Prepare job body
-        table = mappers.bucket_to_table(self.__prefix, bucket)
+        tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
         body = {
             'configuration': {
                 'load': {
                     'destinationTable': {
                         'projectId': self.__project,
                         'datasetId': self.__dataset,
-                        'tableId': table
+                        'tableId': tablename
                     },
                     'sourceFormat': 'CSV',
                 }

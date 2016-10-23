@@ -10,17 +10,17 @@ from slugify import slugify
 
 # Module API
 
-def bucket_to_table(prefix, bucket):
-    """Convert bucket name to Bigquery table name.
+def bucket_to_tablename(prefix, bucket):
+    """Convert bucket to Bigquery tablename.
     """
     return prefix + bucket
 
 
-def table_to_bucket(prefix, table):
-    """Convert Bigquery table name to bucket name.
+def tablename_to_bucket(prefix, tablename):
+    """Convert Bigquery tablename to bucket.
     """
-    if table.startswith(prefix):
-        return table.replace(prefix, '', 1)
+    if tablename.startswith(prefix):
+        return tablename.replace(prefix, '', 1)
     return None
 
 
