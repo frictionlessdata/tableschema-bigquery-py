@@ -22,11 +22,11 @@ PACKAGE = 'jsontableschema_bigquery'
 NAME = PACKAGE.replace('_', '-')
 INSTALL_REQUIRES = [
     'six>=1.9,<2.0a',
-    'unicodecsv>=0.14,<0.15a',
     'python-slugify>=1.2,<2.0a',
-    'jsontableschema>=0.7,<0.8a',
     'google-api-python-client>=1.5,<2.0a',
-    'tabulator>=0.7,<0.8a',
+    'unicodecsv>=0.14,<1.0a',
+    'jsontableschema>=0.7,<1.0a',
+    'tabulator>=0.7,<1.0a',
 ]
 TESTS_REQUIRE = [
     'pylama',
