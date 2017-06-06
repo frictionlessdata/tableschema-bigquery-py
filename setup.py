@@ -21,12 +21,12 @@ def read(*paths):
 PACKAGE = 'jsontableschema_bigquery'
 NAME = PACKAGE.replace('_', '-')
 INSTALL_REQUIRES = [
-    'six>=1.9,<2.0a',
-    'python-slugify>=1.2,<2.0a',
-    'google-api-python-client>=1.5,<2.0a',
-    'unicodecsv>=0.14,<1.0a',
-    'jsontableschema>=0.7,<1.0a',
-    'tabulator>=0.7,<1.0a',
+    'six>=1.9,<2.0',
+    'python-slugify>=1.2,<2.0',
+    'google-api-python-client>=1.5,<2.0',
+    'unicodecsv>=0.14,<2.0',
+    'jsontableschema>=0.7,<2.0',
+    'tabulator>=0.7,<2.0',
 ]
 TESTS_REQUIRE = [
     'pylama',
