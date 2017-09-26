@@ -36,6 +36,8 @@ class Storage(object):
         self.__mapper = Mapper(prefix=prefix)
 
     def __repr__(self):
+        """https://github.com/frictionlessdata/tableschema-sql-py#storage
+        """
 
         # Template and format
         template = 'Storage <{service}/{project}-{dataset}>'
