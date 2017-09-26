@@ -36,7 +36,7 @@ class Storage(object):
         self.__mapper = Mapper(prefix=prefix)
 
     def __repr__(self):
-        """https://github.com/frictionlessdata/tableschema-sql-py#storage
+        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
         """
 
         # Template and format
