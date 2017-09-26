@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 import io
 import six
 import time
-import datetime
 import unicodecsv
 import tableschema
 from apiclient.http import MediaIoBaseUpload
@@ -31,6 +30,7 @@ class Storage(object):
         self.__prefix = prefix
         self.__buckets = None
         self.__descriptors = {}
+        self.__fallbacks = {}
 
         # Create mapper
         self.__mapper = Mapper(prefix=prefix)
@@ -88,23 +88,20 @@ class Storage(object):
             if bucket in self.buckets:
                 if not force:
                     message = 'Bucket "%s" already exists' % bucket
-                    raise RuntimeError(message)
+                    raise tableschema.exceptions.StorageError(message)
                 self.delete(bucket)
-
-            # Add to schemas
-            self.__descriptors[bucket] = descriptor
 
             # Prepare job body
             tableschema.validate(descriptor)
             table_name = self.__mapper.convert_bucket(bucket)
-            nativedesc = self.__mapper.convert_descriptor(descriptor)
+            converted_descriptor, fallbacks = self.__mapper.convert_descriptor(descriptor)
             body = {
                 'tableReference': {
                     'projectId': self.__project,
                     'datasetId': self.__dataset,
                     'tableId': table_name,
                 },
-                'schema': nativedesc,
+                'schema': converted_descriptor,
             }
 
             # Make request
@@ -112,6 +109,10 @@ class Storage(object):
                 projectId=self.__project,
                 datasetId=self.__dataset,
                 body=body).execute()
+
+            # Add to descriptors/fallbacks
+            self.__descriptors[bucket] = descriptor
+            self.__fallbacks[bucket] = fallbacks
 
         # Remove buckets cache
         self.__buckets = None
@@ -134,7 +135,8 @@ class Storage(object):
             if bucket not in self.buckets:
                 if not ignore:
                     message = 'Bucket "%s" doesn\'t exist.' % bucket
-                    raise RuntimeError(message)
+                    raise tableschema.exceptions.StorageError(message)
+                return
 
             # Remove from descriptors
             if bucket in self.__descriptors:
@@ -167,8 +169,8 @@ class Storage(object):
                     projectId=self.__project,
                     datasetId=self.__dataset,
                     tableId=table_name).execute()
-                nativedesc = response['schema']
-                descriptor = self.__mapper.restore_descriptor(nativedesc)
+                converted_descriptor = response['schema']
+                descriptor = self.__mapper.restore_descriptor(converted_descriptor)
 
         return descriptor
 
@@ -176,35 +178,28 @@ class Storage(object):
         """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
         """
 
-        # Get response
-        descriptor = self.describe(bucket)
-        schema = tableschema.Schema(descriptor)
+        # Get schema/data
+        schema = tableschema.Schema(self.describe(bucket))
         table_name = self.__mapper.convert_bucket(bucket)
         response = self.__service.tabledata().list(
             projectId=self.__project,
             datasetId=self.__dataset,
             tableId=table_name).execute()
 
-        # Yield rows
+        # Collect rows
+        rows = []
         for fields in response['rows']:
-            row = []
-            values = [field['v'] for field in fields['f']]
-            for index, field in enumerate(schema.fields):
-                value = values[index]
-                # Here we fix bigquery "1.234234E9" like datetimes
-                if field.type == 'date':
-                    value = datetime.datetime.utcfromtimestamp(
-                        int(float(value)))
-                    fmt = '%Y-%m-%d'
-                    if field.format.startswith('fmt:'):
-                        fmt = field.format.replace('fmt:', '')
-                    value = value.strftime(fmt)
-                elif field.type == 'datetime':
-                    value = datetime.datetime.utcfromtimestamp(
-                        int(float(value)))
-                    value = '%sZ' % value.isoformat()
-                row.append(value)
-            yield schema.cast_row(row)
+            row = [field['v'] for field in fields['f']]
+            rows.append(row)
+
+        # Sort rows
+        # TODO: provide proper sorting solution
+        rows = sorted(rows, key=lambda row: row[0])
+
+        # Emit rows
+        for row in rows:
+            row = self.__mapper.restore_row(row, schema=schema)
+            yield row
 
     def read(self, bucket):
         """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
@@ -216,12 +211,17 @@ class Storage(object):
         """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
         """
 
-        # Prepare
+        # Write buffer
         BUFFER_SIZE = 10000
 
-        # Write
+        # Prepare schema, fallbacks
+        schema = tableschema.Schema(self.describe(bucket))
+        fallbacks = self.__fallbacks.get(bucket, [])
+
+        # Write data
         rows_buffer = []
         for row in rows:
+            row = self.__mapper.convert_row(row, schema=schema, fallbacks=fallbacks)
             rows_buffer.append(row)
             if len(rows_buffer) > BUFFER_SIZE:
                 self.__write_rows_buffer(bucket, rows_buffer)
@@ -234,20 +234,9 @@ class Storage(object):
     def __write_rows_buffer(self, bucket, rows_buffer):
 
         # Process data to byte stream csv
-        descriptor = self.describe(bucket)
-        schema = tableschema.Schema(descriptor)
         bytes = io.BufferedRandom(io.BytesIO())
         writer = unicodecsv.writer(bytes, encoding='utf-8')
-        for values in rows_buffer:
-            row = []
-            values = schema.cast_row(values)
-            for index, field in enumerate(schema.fields):
-                value = values[index]
-                # Here we convert date to datetime
-                if field.type == 'date':
-                    value = datetime.datetime.fromordinal(value.toordinal())
-                    value = '%sZ' % value.isoformat()
-                row.append(value)
+        for row in rows_buffer:
             writer.writerow(row)
         bytes.seek(0)
 
@@ -291,6 +280,6 @@ class Storage(object):
                 if result['status'].get('errors'):
                     errors = result['status']['errors']
                     message = '\n'.join(error['message'] for error in errors)
-                    raise RuntimeError(message)
+                    raise tableschema.exceptions.StorageError(message)
                 break
             time.sleep(1)

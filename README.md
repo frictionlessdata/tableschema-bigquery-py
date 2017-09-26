@@ -38,7 +38,7 @@ from tableschema import Table
 from apiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 
-# Prepare BigQuery connection
+# Prepare BigQuery credentials
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.credentials.json'
 credentials = GoogleCredentials.get_application_default()
 service = build('bigquery', 'v2', credentials=credentials)

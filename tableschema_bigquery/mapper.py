@@ -5,6 +5,8 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import re
+import json
+import tableschema
 from slugify import slugify
 
 
@@ -28,25 +30,41 @@ class Mapper(object):
         """Convert descriptor to BigQuery
         """
 
-        # Convert
+        # Fields
         fields = []
-        for field in descriptor['fields']:
-            ftype = self.convert_type(field['type'])
+        fallbacks = []
+        schema = tableschema.Schema(descriptor)
+        for index, field in enumerate(schema.fields):
+            converted_type = self.convert_type(field.type)
+            if not converted_type:
+                converted_type = 'STRING'
+                fallbacks.append(index)
             mode = 'NULLABLE'
-            if field.get('constraints', {}).get('required', False):
+            if field.required:
                 mode = 'REQUIRED'
             fields.append({
-                'name': _slugify_field_name(field['name']),
-                'type': ftype,
+                'name': _slugify_field_name(field.name),
+                'type': converted_type,
                 'mode': mode,
             })
-        nativedesc = {'fields': fields}
 
-        return nativedesc
+        # Descriptor
+        converted_descriptor = {
+            'fields': fields,
+        }
 
-    def convert_row(self, row):
+        return (converted_descriptor, fallbacks)
+
+    def convert_row(self, row, schema, fallbacks):
         """Convert row to BigQuery
         """
+        for index, field in enumerate(schema.fields):
+            value = row[index]
+            if index in fallbacks:
+                value = _uncast_value(value, field=field)
+            else:
+                value = field.cast_value(value)
+            row[index] = value
         return row
 
     def convert_type(self, type):
@@ -55,19 +73,27 @@ class Mapper(object):
 
         # Mapping
         mapping = {
-            'string': 'STRING',
+            'any': 'STRING',
+            'array': None,
+            'boolean': 'BOOLEAN',
+            'date': 'DATE',
+            'datetime': 'DATETIME',
+            'duration': None,
+            'geojson': None,
+            'geopoint': None,
             'integer': 'INTEGER',
             'number': 'FLOAT',
-            'boolean': 'BOOLEAN',
-            'date': 'TIMESTAMP',
-            'time': 'TIMESTAMP',
-            'datetime': 'TIMESTAMP',
+            'object': None,
+            'string': 'STRING',
+            'time': 'TIME',
+            'year': 'INTEGER',
+            'yearmonth': None,
         }
 
         # Not supported type
         if type not in mapping:
             message = 'Type %s is not supported' % type
-            raise TypeError(message)
+            raise tableschema.exceptions.StorageError(message)
 
         return mapping[type]
 
@@ -78,17 +104,17 @@ class Mapper(object):
             return table_name.replace(self.__prefix, '', 1)
         return None
 
-    def restore_descriptor(self, nativedesc):
+    def restore_descriptor(self, converted_descriptor):
         """Restore descriptor rom BigQuery
         """
 
         # Convert
         fields = []
-        for field in nativedesc['fields']:
-            ftype = self.restore_type(field['type'])
+        for field in converted_descriptor['fields']:
+            field_type = self.restore_type(field['type'])
             resfield = {
                 'name': field['name'],
-                'type': ftype,
+                'type': field_type,
             }
             if field.get('mode', 'NULLABLE') != 'NULLABLE':
                 resfield['constraints'] = {'required': True}
@@ -97,10 +123,13 @@ class Mapper(object):
 
         return descriptor
 
-    def restore_row(self, row):
+    def restore_row(self, row, schema):
         """Restore row from BigQuery
         """
-        return row
+        for index, field in enumerate(schema.fields):
+            if field.type == 'datetime':
+                row[index] = '%sZ' % row[index]
+        return schema.cast_row(row)
 
     def restore_type(self, type):
         """Restore type from BigQuery
@@ -108,17 +137,19 @@ class Mapper(object):
 
         # Mapping
         mapping = {
-            'STRING': 'string',
+            'BOOLEAN': 'boolean',
+            'DATE': 'date',
+            'DATETIME': 'datetime',
             'INTEGER': 'integer',
             'FLOAT': 'number',
-            'BOOLEAN': 'boolean',
-            'TIMESTAMP': 'datetime',
+            'STRING': 'string',
+            'TIME': 'time',
         }
 
         # Not supported type
         if type not in mapping:
             message = 'Type %s is not supported' % type
-            raise TypeError(message)
+            raise tableschema.exceptions.StorageError(message)
 
         return mapping[type]
 
@@ -139,3 +170,13 @@ def _slugify_field_name(name):
             name = '_' + name
 
     return name[:MAX_LENGTH]
+
+
+def _uncast_value(value, field):
+    # Eventially should be moved to:
+    # https://github.com/frictionlessdata/tableschema-py/issues/161
+    if isinstance(value, (list, dict)):
+        value = json.dumps(value)
+    else:
+        value = str(value)
+    return value
