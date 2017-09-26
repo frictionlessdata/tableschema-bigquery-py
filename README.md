@@ -53,7 +53,7 @@ table.save('data', storage='bigquery', service=service, project=project, dataset
 
 Package implements [Tabular Storage](https://github.com/frictionlessdata/tableschema-py#storage) interface (see full documentation on the link):
 
-![Storage](https://raw.githubusercontent.com/frictionlessdata/tableschema-py/master/data/storage.png)
+![Storage](https://i.imgur.com/RQgrxqp.png)
 
 This driver provides an additional API:
 
