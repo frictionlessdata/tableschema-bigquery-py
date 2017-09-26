@@ -12,7 +12,7 @@ from tabulator import topen
 from apiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 
-from jsontableschema_bigquery import Storage
+from tableschema_bigquery import Storage
 
 
 # Get resources
