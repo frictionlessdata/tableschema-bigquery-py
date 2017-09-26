@@ -16,7 +16,7 @@ from tabulator import Stream
 from jsontableschema import Schema
 from apiclient.discovery import build
 from oauth2client.client import GoogleCredentials
-from jsontableschema_bigquery import Storage
+from tableschema_bigquery import Storage
 
 
 # Tests

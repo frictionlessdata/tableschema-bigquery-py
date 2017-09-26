@@ -9,30 +9,20 @@ import six
 import time
 import datetime
 import unicodecsv
-import jsontableschema
-from jsontableschema import Schema
+import tableschema
 from apiclient.http import MediaIoBaseUpload
-from . import mappers
+from .mapper import Mapper
 
 
 # Module API
 
 class Storage(object):
-    """BigQuery Tabular Storage.
-
-    It's an implementation of `jsontablescema.Storage`.
-
-    Args:
-        service (object): service object from API
-        project (str): project name
-        dataset (str): dataset name
-        prefix (str): prefix for all buckets
-
-    """
 
     # Public
 
     def __init__(self, service, project, dataset, prefix=''):
+        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
+        """
 
         # Set attributes
         self.__service = service
@@ -41,6 +31,9 @@ class Storage(object):
         self.__prefix = prefix
         self.__buckets = None
         self.__descriptors = {}
+
+        # Create mapper
+        self.__mapper = Mapper(prefix=prefix)
 
     def __repr__(self):
 
@@ -55,6 +48,8 @@ class Storage(object):
 
     @property
     def buckets(self):
+        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
+        """
 
         # No cached value
         if self.__buckets is None:
@@ -67,14 +62,16 @@ class Storage(object):
             # Extract buckets
             self.__buckets = []
             for table in response.get('tables', []):
-                tablename = table['tableReference']['tableId']
-                bucket = mappers.tablename_to_bucket(self.__prefix, tablename)
+                table_name = table['tableReference']['tableId']
+                bucket = self.__mapper.restore_bucket(table_name)
                 if bucket is not None:
                     self.__buckets.append(bucket)
 
         return self.__buckets
 
     def create(self, bucket, descriptor, force=False):
+        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
+        """
 
         # Make lists
         buckets = bucket
@@ -98,14 +95,14 @@ class Storage(object):
             self.__descriptors[bucket] = descriptor
 
             # Prepare job body
-            jsontableschema.validate(descriptor)
-            tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
-            nativedesc = mappers.descriptor_to_nativedesc(descriptor)
+            tableschema.validate(descriptor)
+            table_name = self.__mapper.convert_bucket(bucket)
+            nativedesc = self.__mapper.convert_descriptor(descriptor)
             body = {
                 'tableReference': {
                     'projectId': self.__project,
                     'datasetId': self.__dataset,
-                    'tableId': tablename,
+                    'tableId': table_name,
                 },
                 'schema': nativedesc,
             }
@@ -120,6 +117,8 @@ class Storage(object):
         self.__buckets = None
 
     def delete(self, bucket=None, ignore=False):
+        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
+        """
 
         # Make lists
         buckets = bucket
@@ -142,16 +141,18 @@ class Storage(object):
                 del self.__descriptors[bucket]
 
             # Make delete request
-            tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
+            table_name = self.__mapper.convert_bucket(bucket)
             self.__service.tables().delete(
                 projectId=self.__project,
                 datasetId=self.__dataset,
-                tableId=tablename).execute()
+                tableId=table_name).execute()
 
         # Remove tables cache
         self.__buckets = None
 
     def describe(self, bucket, descriptor=None):
+        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
+        """
 
         # Set descriptor
         if descriptor is not None:
@@ -161,26 +162,28 @@ class Storage(object):
         else:
             descriptor = self.__descriptors.get(bucket)
             if descriptor is None:
-                tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
+                table_name = self.__mapper.convert_bucket(bucket)
                 response = self.__service.tables().get(
                     projectId=self.__project,
                     datasetId=self.__dataset,
-                    tableId=tablename).execute()
+                    tableId=table_name).execute()
                 nativedesc = response['schema']
-                descriptor = mappers.nativedesc_to_descriptor(nativedesc)
+                descriptor = self.__mapper.restore_descriptor(nativedesc)
 
         return descriptor
 
     def iter(self, bucket):
+        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
+        """
 
         # Get response
         descriptor = self.describe(bucket)
-        schema = Schema(descriptor)
-        tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
+        schema = tableschema.Schema(descriptor)
+        table_name = self.__mapper.convert_bucket(bucket)
         response = self.__service.tabledata().list(
             projectId=self.__project,
             datasetId=self.__dataset,
-            tableId=tablename).execute()
+            tableId=table_name).execute()
 
         # Yield rows
         for fields in response['rows']:
@@ -204,13 +207,14 @@ class Storage(object):
             yield schema.cast_row(row)
 
     def read(self, bucket):
-
-        # Get rows
+        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
+        """
         rows = list(self.iter(bucket))
-
         return rows
 
     def write(self, bucket, rows):
+        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
+        """
 
         # Prepare
         BUFFER_SIZE = 10000
@@ -231,7 +235,7 @@ class Storage(object):
 
         # Process data to byte stream csv
         descriptor = self.describe(bucket)
-        schema = Schema(descriptor)
+        schema = tableschema.Schema(descriptor)
         bytes = io.BufferedRandom(io.BytesIO())
         writer = unicodecsv.writer(bytes, encoding='utf-8')
         for values in rows_buffer:
@@ -248,14 +252,14 @@ class Storage(object):
         bytes.seek(0)
 
         # Prepare job body
-        tablename = mappers.bucket_to_tablename(self.__prefix, bucket)
+        table_name = self.__mapper.convert_bucket(bucket)
         body = {
             'configuration': {
                 'load': {
                     'destinationTable': {
                         'projectId': self.__project,
                         'datasetId': self.__dataset,
-                        'tableId': tablename
+                        'tableId': table_name
                     },
                     'sourceFormat': 'CSV',
                 }
