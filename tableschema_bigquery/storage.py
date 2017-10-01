@@ -196,7 +196,7 @@ class Storage(tableschema.Storage):
 
         # Sort rows
         # TODO: provide proper sorting solution
-        rows = sorted(rows, key=lambda row: row[0])
+        rows = sorted(rows, key=lambda row: row[0] if row[0] is not None else 'null')
 
         # Emit rows
         for row in rows:
