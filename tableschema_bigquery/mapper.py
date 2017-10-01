@@ -8,6 +8,7 @@ import re
 import json
 import tableschema
 from slugify import slugify
+from dateutil.parser import parse
 
 
 # Module API
@@ -128,7 +129,11 @@ class Mapper(object):
         """
         for index, field in enumerate(schema.fields):
             if field.type == 'datetime':
-                row[index] = '%sZ' % row[index]
+                row[index] = parse(row[index])
+            if field.type == 'date':
+                row[index] = parse(row[index]).date()
+            if field.type == 'time':
+                row[index] = parse(row[index]).time()
         return schema.cast_row(row)
 
     def restore_type(self, type):
