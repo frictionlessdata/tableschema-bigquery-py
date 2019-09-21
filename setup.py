@@ -21,12 +21,12 @@ def read(*paths):
 PACKAGE = 'tableschema_bigquery'
 NAME = PACKAGE.replace('_', '-')
 INSTALL_REQUIRES = [
-    'six>=1.9,<2.0',
-    'python-slugify>=1.2,<2.0',
-    'google-api-python-client>=1.5,<2.0',
-    'unicodecsv>=0.14,<2.0',
-    'tableschema>=1.0,<2.0',
-    'tabulator>=1.0,<2.0',
+    'six>=1.9',
+    'python-slugify>=1.2',
+    'google-api-python-client>=1.5',
+    'unicodecsv>=0.14',
+    'tableschema>=1.0',
+    'tabulator>=1.0',
 ]
 TESTS_REQUIRE = [
     'pylama',
@@ -51,6 +51,7 @@ setup(
     extras_require={'develop': TESTS_REQUIRE},
     zip_safe=False,
     long_description=README,
+    long_description_content_type='text/markdown',
     description='Generate BigQuery tables, load and extract data, based on JSON Table Schema descriptors.',
     author='Open Knowledge Foundation',
     author_email='info@okfn.org',
