@@ -33,6 +33,7 @@ TESTS_REQUIRE = [
     'pytest',
     'mock',
     'tox',
+    'oauth2client',
 ]
 README = read('README.md')
 VERSION = read(PACKAGE, 'VERSION')
