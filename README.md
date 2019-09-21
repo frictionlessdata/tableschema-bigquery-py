@@ -3,6 +3,7 @@
 [![Travis](https://img.shields.io/travis/frictionlessdata/tableschema-bigquery-py/master.svg)](https://travis-ci.org/frictionlessdata/tableschema-bigquery-py)
 [![Coveralls](http://img.shields.io/coveralls/frictionlessdata/tableschema-bigquery-py.svg?branch=master)](https://coveralls.io/r/frictionlessdata/tableschema-bigquery-py?branch=master)
 [![PyPi](https://img.shields.io/pypi/v/tableschema-bigquery.svg)](https://pypi.python.org/pypi/tableschema-bigquery)
+[![Github](https://img.shields.io/badge/github-master-brightgreen)](https://github.com/frictionlessdata/tableschema-bigquery-py)
 [![Gitter](https://img.shields.io/gitter/room/frictionlessdata/chat.svg)](https://gitter.im/frictionlessdata/chat)
 
 Generate and load BigQuery tables based on [Table Schema](http://specs.frictionlessdata.io/table-schema/) descriptors.
