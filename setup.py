@@ -29,11 +29,12 @@ INSTALL_REQUIRES = [
     'tabulator>=1.0',
 ]
 TESTS_REQUIRE = [
+    'mock',
     'pylama',
     'pytest',
-    'mock',
-    'tox',
+    'pytest-cov',
     'oauth2client',
+    'tox',
 ]
 README = read('README.md')
 VERSION = read(PACKAGE, 'VERSION')
