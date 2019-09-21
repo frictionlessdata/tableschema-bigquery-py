@@ -166,7 +166,7 @@ def _slugify_field_name(name):
     # Referene:
     # https://cloud.google.com/bigquery/docs/reference/v2/tables
     MAX_LENGTH = 128
-    VALID_NAME = '^[a-zA-Z_]\w{0,%d}$' % (MAX_LENGTH-1)
+    VALID_NAME = r'^[a-zA-Z_]\w{0,%d}$' % (MAX_LENGTH-1)
 
     # Convert
     if not re.match(VALID_NAME, name):
