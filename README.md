@@ -18,9 +18,10 @@ Generate and load BigQuery tables based on [Table Schema](http://specs.frictionl
 
   - [Getting Started](#getting-started)
     - [Installation](#installation)
-    - [Examples](#examples)
+    - [Prepare BigQuery](#prepare-bigquery)
   - [Documentation](#documentation)
-    - [Storage](#storage)
+  - [API Reference](#api-reference)
+    - [`Storage`](#storage)
   - [Contributing](#contributing)
   - [Changelog](#changelog)
 
@@ -36,20 +37,20 @@ The package use semantic versioning. It means that major versions  could include
 pip install tableschema-bigquery
 ```
 
+### Prepare BigQuery
+
 To start using Google BigQuery service:
 - Create a new project - [link](https://console.developers.google.com/home/dashboard)
 - Create a service key - [link](https://console.developers.google.com/apis/credentials)
 - Download json credentials and set `GOOGLE_APPLICATION_CREDENTIALS` environment variable
 
-### Examples
-
-Code examples in this readme requires Python 3.3+ interpreter. You could see even more example in [examples](https://github.com/frictionlessdata/tableschema-bigquery-py/tree/master/examples) directory.
+## Documentation
 
 ```python
 import io
 import os
 import json
-from tableschema import Table
+from datapackage import Package
 from apiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 
@@ -59,38 +60,46 @@ credentials = GoogleCredentials.get_application_default()
 service = build('bigquery', 'v2', credentials=credentials)
 project = json.load(io.open('.credentials.json', encoding='utf-8'))['project_id']
 
-# Load and save table to BigQuery
-table = Table('data.csv', schema='schema.json')
-table.save('data', storage='bigquery', service=service, project=project, dataset='dataset')
+# Save package to BigQuery
+package = Package('datapackage.json')
+package.save(storage='bigquery', service=service, project=project, dataset='dataset')
+
+# Load package from BigQuery
+package = Package(storage='bigquery', service=service, project=project, dataset='dataset')
+package.resources
 ```
 
-## Documentation
+## API Reference
 
-The whole public API of this package is described here and follows semantic versioning rules. Everyting outside of this readme are private API and could be changed without any notification on any new version.
+### `Storage`
+```python
+Storage(self, service, project, dataset, prefix='')
+```
+BigQuery storage
 
-### Storage
-
-Package implements [Tabular Storage](https://github.com/frictionlessdata/tableschema-py#storage) interface (see full documentation on the link):
+Package implements
+[Tabular Storage](https://github.com/frictionlessdata/tableschema-py#storage)
+interface (see full documentation on the link):
 
 ![Storage](https://i.imgur.com/RQgrxqp.png)
 
-This driver provides an additional API:
+> Only additional API is documented
 
-#### `Storage(service, project, dataset, prefix='')`
+__Arguments__
+- __service (object)__: BigQuery `Service` object
+- __project (str)__: BigQuery project name
+- __dataset (str)__: BigQuery dataset name
+- __prefix (str)__: prefix for all buckets
 
-- `service (object)` - BigQuery `Service` object
-- `project (str)` - BigQuery project name
-- `dataset (str)` - BigQuery dataset name
-- `prefix (str)` - prefix for all buckets
 
 ## Contributing
 
-The project follows the [Open Knowledge International coding standards](https://github.com/okfn/coding-standards).
+> The project follows the [Open Knowledge International coding standards](https://github.com/okfn/coding-standards).
 
 Recommended way to get started is to create and activate a project virtual environment.
 To install package and development dependencies into active environment:
 
-```
+```bash
 $ make install
 ```
 
@@ -99,29 +108,6 @@ To run tests with linting and coverage:
 ```bash
 $ make test
 ```
-
-For linting `pylama` configured in `pylama.ini` is used. On this stage it's already
-installed into your environment and could be used separately with more fine-grained control
-as described in documentation - https://pylama.readthedocs.io/en/latest/.
-
-For example to sort results by error type:
-
-```bash
-$ pylama --sort <path>
-```
-
-For testing `tox` configured in `tox.ini` is used.
-It's already installed into your environment and could be used separately with more fine-grained control as described in documentation - https://testrun.org/tox/latest/.
-
-For example to check subset of tests against Python 2 environment with increased verbosity.
-All positional arguments and options after `--` will be passed to `py.test`:
-
-```bash
-tox -e py27 -- -v tests/<path>
-```
-
-Under the hood `tox` uses `pytest` configured in `pytest.ini`, `coverage`
-and `mock` packages. This packages are available only in tox envionments.
 
 ## Changelog
 

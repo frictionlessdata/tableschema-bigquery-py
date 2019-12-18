@@ -16,12 +16,27 @@ from .mapper import Mapper
 # Module API
 
 class Storage(tableschema.Storage):
+    """BigQuery storage
+
+    Package implements
+    [Tabular Storage](https://github.com/frictionlessdata/tableschema-py#storage)
+    interface (see full documentation on the link):
+
+    ![Storage](https://i.imgur.com/RQgrxqp.png)
+
+    > Only additional API is documented
+
+    # Arguments
+        service (object): BigQuery `Service` object
+        project (str): BigQuery project name
+        dataset (str): BigQuery dataset name
+        prefix (str): prefix for all buckets
+
+    """
 
     # Public
 
     def __init__(self, service, project, dataset, prefix=''):
-        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
-        """
 
         # Set attributes
         self.__service = service
@@ -36,8 +51,6 @@ class Storage(tableschema.Storage):
         self.__mapper = Mapper(prefix=prefix)
 
     def __repr__(self):
-        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
-        """
 
         # Template and format
         template = 'Storage <{service}/{project}-{dataset}>'
@@ -50,8 +63,6 @@ class Storage(tableschema.Storage):
 
     @property
     def buckets(self):
-        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
-        """
 
         # No cached value
         if self.__buckets is None:
@@ -72,8 +83,6 @@ class Storage(tableschema.Storage):
         return self.__buckets
 
     def create(self, bucket, descriptor, force=False):
-        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
-        """
 
         # Make lists
         buckets = bucket
@@ -120,8 +129,6 @@ class Storage(tableschema.Storage):
         self.__buckets = None
 
     def delete(self, bucket=None, ignore=False):
-        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
-        """
 
         # Make lists
         buckets = bucket
@@ -155,8 +162,6 @@ class Storage(tableschema.Storage):
         self.__buckets = None
 
     def describe(self, bucket, descriptor=None):
-        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
-        """
 
         # Set descriptor
         if descriptor is not None:
@@ -177,8 +182,6 @@ class Storage(tableschema.Storage):
         return descriptor
 
     def iter(self, bucket):
-        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
-        """
 
         # Get schema/data
         schema = tableschema.Schema(self.describe(bucket))
@@ -204,14 +207,10 @@ class Storage(tableschema.Storage):
             yield row
 
     def read(self, bucket):
-        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
-        """
         rows = list(self.iter(bucket))
         return rows
 
     def write(self, bucket, rows):
-        """https://github.com/frictionlessdata/tableschema-bigquery-py#storage
-        """
 
         # Write buffer
         BUFFER_SIZE = 10000
