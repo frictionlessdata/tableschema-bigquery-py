@@ -22,6 +22,7 @@ PACKAGE = 'tableschema_bigquery'
 NAME = PACKAGE.replace('_', '-')
 INSTALL_REQUIRES = [
     'six>=1.9',
+    'rsa<=4.0',  # for py2
     'python-slugify>=1.2',
     'google-api-python-client>=1.5',
     'unicodecsv>=0.14',
